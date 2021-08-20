@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <cmath>
+#include <vector>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -9,9 +10,13 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "Mesh.h"
+
 const GLint WIDTH = 800, HEIGHT = 600;	// Window Dimensions
 
-GLuint VAO, VBO, IBO, shader, uniformModel, uniformProjection;	// Shader variables
+GLuint shader, uniformModel, uniformProjection;	// Shader variables
+
+std::vector<Mesh*> meshList;
 
 bool leftDirection = true;		// Is the triangle moving left?
 float triOffset = 0.0f;			// The current offset
@@ -61,43 +66,6 @@ void main(){												\n\
 }															\n\
 ";
 
-void CreateTriangle() {
-	GLfloat vertices[] = {
-		-1.0f, -1.0f, 0.0f,
-		1.0f , -1.0f, 0.0f,
-		0.0f , 1.0f , 0.0f
-	};
-
-	glGenVertexArrays(1, &VAO);	// Creates 1 VAO and returns the VAO ID
-	glBindVertexArray(VAO);		// Binds the VAO to bind VBOs
-
-	glGenBuffers(1, &VBO);				// Creates 1 VBO and returns the VBO ID
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);	// Binds a VBO to the target buffer
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
-		// buffers the data to the target VBO
-		// GL_ARRAY_BUFFER:		The target to bind the data to
-		// sizeof(vertices):	The size of the data being buffered
-		// vertices:			The data being buffered
-		// GL_STATIC_DRAW:		How the data will be used
-	// GL_STATIC_DRAW does not allow for the manipulation of the data inside the buffer
-	// while GL_DYNAMIC_DRAW does allow manipulation of the buffer data, it can be complecated
-	// however.
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-		// 0:			Location of the attribute pointer (location 0 as specified in the vertex shader)
-		// 3:			The amount of data to pass though the attribute pointer (the x, y, and z values of the vertex)
-		// GL_FLOAT:	The type of data being passed (float)
-		// GL_FALSE:	Is the data normalized? (false)
-		// 0:			How much data is skipped between each data chunk used (don't skip any data) (can be used if texture coordinates are included in the buffer)
-		// 0:			The offset of where the data will start being read from (start at the start of the buffer)
-
-	glEnableVertexAttribArray(0);	// Enable the attrib array at location 0
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);	// Unbinds the VBO at the array buffer location
-	glBindVertexArray(0);				// Unbinds the VAO
-
-}
-
 void CreateShape() {
 	GLfloat vertices[] = {
 		-1.0f, -1.0f, 0.0f,	// Point 0
@@ -112,26 +80,10 @@ void CreateShape() {
 		2, 3, 0,	// Front Facing Triangle (Original)
 		0, 1, 2		// 
 	};
-
-	glGenVertexArrays(1, &VAO);
-	glBindVertexArray(VAO);
-
-	glGenBuffers(1, &IBO);																// Generates a buffer for the IBO
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);											// Binds the IBO to the element array buffer inside the VAO
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);	// Buffers the data of the indices order to the IBO's buffer
-
-	glGenBuffers(1, &VBO);														
-	glBindBuffer(GL_ARRAY_BUFFER, VBO);											
-	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);	
-
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(0);
-
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindVertexArray(0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);	// Unbind IBO after unbinding VAO
-	// The IBO is unbound after the VAO as the VAO can only contain 1 IBO, thus unbinding beforehand will result in the removal of the IBO
-	// The VBO is unbound before the VAO as the VAO can contain multiple VBOs, thus unbinding th VBO beforehand will not result in it's removal from the VAO
+	
+	Mesh* obj1 = new Mesh();
+	obj1->CreateMesh(vertices, indices, 12, 12);
+	meshList.push_back(obj1);	// Adds a new element to the end of the vector
 
 }
 
@@ -251,7 +203,6 @@ int main() {
 	glViewport(0, 0, bufferWidth, bufferHeight);	// Sets the view port inside the window (not including the window boarder)
 
 	CreateShape();		// Creates a simple shape with 4 triangles
-	//CreateTriangle(); // Creates a simple triangle primitive
 	CompileShaders();	// Compiles a shader program with vShader and fShader
 
 	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)(bufferWidth/bufferHeight), 0.1f, 100.0f); // Only really need to create it once, unless you're manipulating the projection every frame
@@ -272,7 +223,7 @@ int main() {
 
 		curAngle += angleIncrement;
 		if (curAngle >= 360.0f) {
-			curAngle - 360.0f;
+			curAngle -= 360.0f;
 		}
 
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);				// Sets the clear color to black
@@ -283,9 +234,9 @@ int main() {
 		glm::mat4 model(1.0f);												// Creates an identity matrix
 		model = glm::translate(model, glm::vec3(0.0f, triOffset, -2.5f));	// Applies a translation to the model matrix
 		model = glm::rotate(model, curAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
-			//model:				The matrix to opperate on
-			//curAngle * toRadians:	The angle, in radians, to rotate the matrix by
-			//glm::vec3():			The rotation axis of the matrix (z axis)
+		//model:				The matrix to opperate on
+		//curAngle * toRadians:	The angle, in radians, to rotate the matrix by
+		//glm::vec3():			The rotation axis of the matrix (z axis)
 
 		model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));	//Scales the matrix
 
@@ -296,22 +247,21 @@ int main() {
 			//glm::value_ptr(model):	A pointer to the model matrix
 		glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
 
-		glBindVertexArray(VAO);	// Uses the triangle VAO
+		meshList[0]->RenderMesh();	// Calls the render function of the mesh at the first index
 
-		// glDrawArrays(GL_TRIANGLES, 0, 3);
-			// GL_TRIANGLES: what primitive is being drawn (triangles)
-			// 0: where in the array to start (start at the start of the array)
-			// 3: Amount of points to draw (3 points for a triangle)
+		model = glm::mat4(1.0f);												// Creates an identity matrix
+		model = glm::translate(model, glm::vec3(0.0f, -triOffset, -2.5f));	// Applies a translation to the model matrix
+		model = glm::rotate(model, -curAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
+		//model:				The matrix to opperate on
+		//curAngle * toRadians:	The angle, in radians, to rotate the matrix by
+		//glm::vec3():			The rotation axis of the matrix (z axis)
 
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);				// Binds the active IBO
-		glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);	// Draws the elements based on the IBO
-			// GL_TRIANGLES:	What primitives are being drawn (triangles)
-			// 12:				How many elements are there to draw (4 triangles have 12 points, so 12)
-			// GL_UNSIGNED_INT:	The format of the data being used (can't have half or negative amounts of verteces, so uint)
-			// 0:				The indices data (Already bound in the previous line, so no need to specify here)
+		model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));	//Scales the matrix
 
-		glBindVertexArray(0);						// Unbinds the triangle VAO
-		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);	// Unbinds the IBO, remember, unbind IBOs after their respective VAOs
+		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
+
+		meshList[0]->RenderMesh();	// Calls the render function of the mesh at the first index
+
 		glUseProgram(0);							// Unbinds the shader program
 
 		glfwSwapBuffers(mainWindow);	// Swaps the window's current buffer with the buffer the program was working on
