@@ -1,0 +1,198 @@
+Vector Overview
+	A quantity with a magnitude and direction, how far and in what direction
+	Can be used for direction, position, ect
+
+x = 4, y = 6, z = 2
+v = [4,6,2]
+
+Vector addition:
+[1, 2, 3] + [4, 5, 6] = [1 + 4, 2 + 5, 3 + 6] = [5, 7, 9]
+
+Vector subtraction:
+[1, 2, 3] - [4, 5, 6] = [1 - 4, 2 - 5, 3 - 6] = [-3, -3, -3]
+
+Vector multiplication:
+[1, 2, 3] x 2 = [1 x 2, 2 x 2, 3 x 2] = [2, 4, 6]
+
+Multiplying vectors? Not used often, dot product is used more often
+
+Vector dotproduct:
+[a, b, c] dot [d, e, f] = a x d + b x e + c x f
+[1, 2, 3] dot [4, 5, 6] = 1 x 4 + 2 x 5 + 3 x 6 = 4 + 10 + 18 = 30
+		or
+|v1| x |v2| x cos(theta) = v1 dot v2
+||: magnitude or length
+theta: angle between 2 vectors
+
+Magnitude:
+|v| = sqrt(x^2 + y^2 + z^2)
+|[1, 2, 2]| = sqrt(1^2 + 2^2 + 2^2) = sqrt(1 + 4 + 4) = sqrt(9) = 3
+
+Finding theta:
+
+cos^-1((v1 dot v2) / (|v1| x |v2|)) = theta
+
+What is the dot product?
+	a length of a projection of a vector onto another vector multiplied by the length of the second vector
+
+	dot product is only 0 if the angle of the 2 vectors is 90 deg or PI/2 rad from eachother (perpendicular)
+
+Unit vector:
+	a vector of length 1, represented by the letter u
+
+u = v / |v|
+u = [1, 2, 2] / sqrt(9) = [1, 2, 2] / 3 = [1/3, 2/3, 2/3]
+|u| = 1
+
+Cross product: only really works in 3D
+
+v1 = [x1, y1, z1], v2 = [x2, y2, z2]
+
+v1 x v2 = [y1 x z2 - z1 x y2, z1 x x2 - x1 x z2 , x1 x y2 - y1 x x2]
+v1 x v2 = -(v2 x v1), v1 x v2 != v2 x v1
+
+Matrix overview
+
+i x j grid
+i = rows, j = columns
+
+used to handle transformations, projections, views, ect
+
+matricies are added and subtracted much like vectors, the dimensions of the matricies must match though
+	not preformed much
+
+matricies can be multiplied by a scaler much like a vector
+
+Matrix multiplication:
+
+2x3		|1, 2, 3|	3x2		|7 , 8 |
+m1 =	|4, 5, 6|	m2 =	|9 , 10|
+							|11, 12|
+			|1 x 7 + 2 x 9 + 3 x 11, 1 x 8 + 2 x 10 + 3 x 12|	|58 , 64 |
+m1 x m2 =	|4 x 7 + 5 x 9 + 6 x 11, 4 x 8 + 5 x 10 + 6 x 12| =	|139, 154|
+
+2x3 X 3x2, inside numbers much match to be able to multiply
+
+closer look at the first operation:
+
+|1, 2, 3|		|7 ,  |		|1 x 7 + 2 x 9 + 3 * 11,					|
+| ,  ,  |	x	|9 ,  | =	|					   ,					|
+				|11,  |
+
+A row from the first matrix and the column of the second matrix preform a dot product,
+the result of the dot product is stored in a new matrix where the row from the first 
+matrix and the column of the second matrix overlap. In the above example, the 1st row
+of matrix 1 is opperated with the 1st column of the second matrix, thus the result is
+placed in the 1st row and 1st column of the new matrix.
+
+2x3 X 3x2 = 2x2, the columns of the first matrix must match the rows of the second matrix,
+the new matrix will have the rows of the first matrix and columns of the second matrix.
+
+so: 4x5 X 5x3 = 4x3, 4x4 X 4x1 = 4x1
+
+IMPORTANT!!: A vector is a matrix where the dimensions of the matrix are: # of dimensions x 1,
+so: a vec3 (x, y, z) would be a 3x1 matrix as it contains 3 dimensions
+
+NOTE!!: vectors and matricies are used as vec4, this will be explained when talking about views,
+	for now just remember it's improtant
+
+Identity matrix: all values are 0 except where #rows = #columns, those locations are set to 1
+
+|1, 0, 0, 0|	|x|		|x|
+|0, 1, 0, 0|	|y|		|y|
+|0, 0, 1, 0| x	|z| =	|z|
+|0, 0, 0, 1|	|w|		|w|
+
+Translation: Translate a vector
+|1, 0, 0, Z|	|x|		|x + X|
+|0, 1, 0, Y|	|y|		|y + Y|
+|0, 0, 1, Z| x	|z| =	|z + Z|
+|0, 0, 0, 1|	|1|		|1	  |
+
+Scaling: Rezise a vector
+|SX, 0 , 0 , 0|		|x|		|SX * x|
+|0 , SY, 0 , 0|		|y|		|SY * y|
+|0 , 0 , SZ, 0|  x	|z|  =	|SZ * z|
+|0 , 0 , 0 , 1|		|1|		|1	   |
+
+3 matrices for handling rotation, only need to know Z rotation for 2D games
+
+X rotation:
+|1, 0		  , 0		   , 0|		|x|		|x								|
+|0, cos(theta), -sin(theta), 0|		|y|		|cos(theta) * y - sin(theta) * z|
+|0, sin(theta), cos(theta) , 0|  x	|z|  =	|cos(theta) * z + sin(theta) * y|
+|0, 0		  , 0		   , 1|		|w|		|1								|
+
+Y rotation:
+|cos(theta) , 0, sin(theta), 0|		|x|		|cos(theta) * x + sin(theta) * z|
+|0			, 0, 0		   , 0|		|y|		|y								|
+|-sin(theta), 0, cos(theta), 0|  x	|z|  =	|cos(theta) * z - sin(theta) * x|
+|0			, 0, 0		   , 1|		|w|		|1								|
+
+Z rotation:
+|cos(theta), -sin(theta), 0, 0|		|x|		|cos(theta) * x - sin(theta) * y|
+|sin(theta), cos(theta) , 0, 0|		|y|		|cos(theta) * y + sin(theta) * x|
+|0		   , 0			, 0, 0|  x	|z|  =	|z								|
+|0		   , 0			, 0, 1|		|w|		|1								|
+
+IMPORTAINT!!: theta is in radians inside GLSL
+
+Combining matricies: just multiply the matricies, resulting matrix will preform all
+the transformations, common to start with an identity matrix and add to it.
+
+ORDER MATTERS! transformations happens in reverse order, so the second matrix will
+be preformed first, then the first matrix will occur
+
+transform * scale: scale occurs, then transform, normal
+scale * transform: transform occurs, then scale, this will also scale the transformation
+
+GLM:
+handles common math operations used in OpenGL
+Most important: vectors and matrices.
+uses vec4 and mat4 types
+
+simple code:
+
+glm::mat4 trans;
+trans = glm::translate(trans, glm::vec3(1.0f, 2.0f, 3.0f));
+
+you could use namespace glm; but it can become complicated
+
+Uniform Variables
+	Type of variable in shader
+	Gloabal to the shader that aren't associated with a particular vertex
+
+example:
+#version 330
+
+in vec3 pos;
+uniform mat4 model;
+
+void main(){
+	gl_Position = model * vec4(pos, 1.0);	// Moves every vertex by the matrix
+}
+
+	Each uniform has a location ID in the shader.
+	Need to find the location so we can bind a value to it:
+
+	int location = glGetUniformLocation(shaderID, "uniformVarName");
+
+	Now we can bind a value to that location:
+
+	glUniform1f(location, 3.5f); // for example
+
+	Make sure you have set the appropriate shader program to be in use,
+	don't try to get a uniform ID for the wrong shader or no shader. (glUseProgram(shaderID))
+
+	glUniform1f			- Single float
+	glUniform1i			- Single int
+	glUniform4f			- vec4 of floating values
+	glUniform4v			- vec4 of floating values, specified by pointers
+	glUniformMatrix4fv	- mat4 of floating values, specified by pointers
+	ect ...
+
+	initialise an identity matrix (using GLM):
+	glm::mat4 model(1.0f);
+			or
+	glm::mat4 model = glm::mat4(1.0f);
+	this will need to be preformed again to reset the matrix to an identity matrix

@@ -1,0 +1,119 @@
+The (typical) render pipeline for openGL:
+1. Vertex Specification				
+2. Vertex Shader	(Programmable)	
+3. Tessellation		(Programmable)	
+4. Geometry Shader	(Programmable)	
+5. Vertex Post-Processing			End of vertex Opperations
+6. Primitive Assembly				Groups of vertecies
+7. Rasterization					Conversion to fragments
+8. Fragment Shader	(Programmable)	
+9. Per-Sample Operations			Opperations preformed on fragments
+
+Vertex Specification: Setting up the data of the verticies for the primitives we want to render (typically triangles)
+	Done in the application it's self
+
+	VAO (Vertex Array Object):	Defines what data a vertex has (position, color, texture, ect)
+	VBO (Vertex Buffer Object):	Defines the date inside the VAO
+	Attribute Pointers:			Define where and how shaders can access vertex data
+
+	Creating VAOs/VBOs
+	1. Generate a VAO id
+	2. Bind the VAO with the id
+	3. Generate a VBO id
+	4. Bind the VBO with the id
+	5. Attatch the vertex data to the VBO
+	6. Define the Attribute Pointer formatting
+	7. Enable the Attribute Pointer
+	8. Unbind the VAO and VBO to bind the next object
+
+	Inital Draw:
+	1. Activate Shader Program you want to use
+	2. Bind VAO of the object you want to draw
+	3. Call glDrawArrays, this initiates the rest of the pipeline
+
+Vertex Shader: Not optional
+	Handles vertices individually.
+	Must store something in gl_Position as it is used in later stages
+	Can specify additional outputs used by user-defined shaders
+	Inputs consist of the vertex data itself
+
+	Simple vertex shader example:
+
+#version 330
+
+layout (location = 0) in vec3 pos; // Location dictates where to bind to pass data to the shader
+
+void main()
+{
+	gl_Position = vec4(pos, 1.0); // gl_Position is a vec4, represents the final position of the vertex
+}
+
+Tessellation: Appeared in OpenGL 4.0
+	Can be used to add greater detail dynamically (used for oceans in new games)
+	Allows the division of data into smaller primitives
+
+Geometry Shader: Handles primatives (groupes of vertices)
+	Takes primitives then "emits" their verticies to create the given primitive, or new primitives
+	Can alter data given to it to modify given primitives or generate ner primitives
+	Can alter primitive types
+
+Vertex Post-Processing
+	Transform Feedback (if enabled):
+		Result of the vertex and geometry stages saved to buffers
+
+	Clipping:
+		Primitives that won't be visible are removed (Can't see it? Don't draw it!)
+		Positions converted from "clip-space" to "window space"
+
+Primitive Assembly
+	Vertices are converted to a series of primitives.
+	Face culling: Removal of primitives that can't be seen, or are
+		facing "away" from the camera
+
+Rasterization
+	Converts primitives into "fragments"
+	Fragments are pieces of data for each pixel, obtained from the rasterization process
+	Fragment data will be interpolated based on position relative to each vertex
+
+Fragment Shader
+	Handles data for each fragment
+	Optional but rare to not use it. (exceptions for stuff like shadow maps)
+	Most important output is the color of the pixel that the fragment covers
+	Simplest OpenGL programs usually have a Vertex Shader and a Fragment Shader
+
+Simple Fragment Shader:
+
+#version 330
+
+out vec4 colour;	//Can be named whatever, Fragment shader only has one output, so whatever is set as output is automatically linked to the color
+					// Could be named "hoolagain", compiler doesn't care
+
+void main()
+{
+	color = vec4(1.0, 0.0, 0.0, 1.0);
+}
+
+Per-Sample Operations
+	Series of tests to see if the fragment should be drawn.
+	Depth test determines if something is infront of the point being drawn.
+	Color Blending is used to blend colors together with overlapping fragments, usually for transparency
+	Fragment data written to currently bound frame buffer (usually the default buffer)
+	Lastly, in the application code, the user usually defines a buffer swap here, putting the new frame buffer to the front.
+	
+That's the complete pipeline in this context
+
+Shader Programs are a group of shaders associated with one another
+They are created in OpenGL via a series of functions.
+
+Creating a Shader Program:
+1. Create an empty Program
+2. Create an empty Shader
+3. Attatch shader source code to the Shader
+4. Compile Shaders
+5. Attatch Shaders to Program
+6. Link Program (creates executables from shaders and links them together)
+7. Validate program (optional but adcised as debugging shaders is an absolute pain)
+
+When you want to create a shader, an ID is given
+Simply call glUseProgram(shaderID) to use the Shader Program
+All draw calls from then on will use that shader, glUseProgram is used on a now shaderID, or on '0' (no shader)
