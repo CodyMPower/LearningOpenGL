@@ -13,13 +13,19 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\Udemy Notes">
+      <UniqueIdentifier>{241fc346-1559-4090-8edf-fb23a4db5405}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <Text Include="RenderPipeline.txt">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Udemy Notes</Filter>
     </Text>
     <Text Include="VecMatUni.txt">
-      <Filter>Source Files</Filter>
+      <Filter>Source Files\Udemy Notes</Filter>
+    </Text>
+    <Text Include="Interp_Index_Project.txt">
+      <Filter>Source Files\Udemy Notes</Filter>
     </Text>
   </ItemGroup>
   <ItemGroup>

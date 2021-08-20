@@ -11,7 +11,7 @@
 
 const GLint WIDTH = 800, HEIGHT = 600;	// Window Dimensions
 
-GLuint VAO, VBO, shader, uniformModel;	// Shader variables
+GLuint VAO, VBO, IBO, shader, uniformModel;	// Shader variables
 
 bool leftDirection = true;		// Is the triangle moving left?
 float triOffset = 0.0f;			// The current offset
@@ -20,10 +20,11 @@ float triIncrement = 0.005f;	// The increment value to the offset
 
 float toRadians = 3.14159265f / 180.0f;
 float curAngle = 0.0f;
-float angleIncrement = 0.01;
+float angleIncrement = 0.1f;
 
 /*	Vertex Shader
 	gl_Position is a predefined out vec4 variable
+	vCol is the color based on the position of the vertex
 */
 static const char* vShader = "								\n\
 #version 330												\n\
@@ -32,21 +33,27 @@ layout (location = 0) in vec3 pos;							\n\
 															\n\
 uniform mat4 model;											\n\
 															\n\
+out vec4 vCol;												\n\
+															\n\
 void main(){												\n\
 	gl_Position = model * vec4(pos, 1.0f);					\n\
+	vCol = vec4(clamp(pos, 0.0f, 1.0f), 1.0f);				\n\
 }															\n\
 ";
 
 /*	Fragment Shader
 	any out vec4 will be assumed to be the colour of the pixel on the screen
+	vCol is interpolated based on the location of the fragment shader within the triangle
 */
 static const char* fShader = "								\n\
 #version 330												\n\
 															\n\
+in vec4 vCol;												\n\
+															\n\
 out vec4 colour;											\n\
 															\n\
 void main(){												\n\
-	colour = vec4(1.0, 0.0, 0.0, 1.0);						\n\
+	colour = vCol;											\n\
 }															\n\
 ";
 
@@ -84,6 +91,43 @@ void CreateTriangle() {
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);	// Unbinds the VBO at the array buffer location
 	glBindVertexArray(0);				// Unbinds the VAO
+
+}
+
+void CreateShape() {
+	GLfloat vertices[] = {
+		-1.0f, -1.0f, 0.0f,	// Point 0
+		0.0f , -1.0f, 1.0f,	// Point 1
+		1.0f , -1.0f, 0.0f,	// Point 2
+		0.0f , 1.0f , 0.0f	// Point 3
+	};
+
+	unsigned int indices[] = {
+		0, 3, 1,	// 
+		1, 3, 2,	// 
+		2, 3, 0,	// Front Facing Triangle (Original)
+		0, 1, 2		// 
+	};
+
+	glGenVertexArrays(1, &VAO);
+	glBindVertexArray(VAO);
+
+	glGenBuffers(1, &IBO);																// Generates a buffer for the IBO
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);											// Binds the IBO to the element array buffer inside the VAO
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices), indices, GL_STATIC_DRAW);	// Buffers the data of the indices order to the IBO's buffer
+
+	glGenBuffers(1, &VBO);														
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);											
+	glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);	
+
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+	glEnableVertexAttribArray(0);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindVertexArray(0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);	// Unbind IBO after unbinding VAO
+	// The IBO is unbound after the VAO as the VAO can only contain 1 IBO, thus unbinding beforehand will result in the removal of the IBO
+	// The VBO is unbound before the VAO as the VAO can contain multiple VBOs, thus unbinding th VBO beforehand will not result in it's removal from the VAO
 
 }
 
@@ -199,7 +243,8 @@ int main() {
 
 	glViewport(0, 0, bufferWidth, bufferHeight);	// Sets the view port inside the window (not including the window boarder)
 
-	CreateTriangle();	// Creates a simple triangle primitive
+	CreateShape();		// Creates a simple shape with 4 triangles
+	//CreateTriangle(); // Creates a simple triangle primitive
 	CompileShaders();	// Compiles a shader program with vShader and fShader
 
 	while (!glfwWindowShouldClose(mainWindow)) {
@@ -217,8 +262,8 @@ int main() {
 		}
 
 		curAngle += angleIncrement;
-		if (curAngle >= 360) {
-			curAngle - 360;
+		if (curAngle >= 360.0f) {
+			curAngle - 360.0f;
 		}
 
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);	// Sets the clear color to black
@@ -227,11 +272,11 @@ int main() {
 		glUseProgram(shader);	// Uses the designated shader
 
 		glm::mat4 model(1.0f);												// Creates an identity matrix
-		model = glm::translate(model, glm::vec3(triOffset, 0.0f, 0.0f));	// Applies a translation to the model matrix
-		model = glm::rotate(model, curAngle * toRadians, glm::vec3(0.0f, 0.0f, 1.0f));
-			//model:						The matrix to opperate on
-			//curAngle * toRadians:			The angle, in radians, to rotate the matrix by
-			//glm::vec3(0.0f, 0.0f, 1.0f):	The rotation axis of the matrix (z axis)
+		//model = glm::translate(model, glm::vec3(triOffset, 0.0f, 0.0f));	// Applies a translation to the model matrix
+		model = glm::rotate(model, curAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
+			//model:				The matrix to opperate on
+			//curAngle * toRadians:	The angle, in radians, to rotate the matrix by
+			//glm::vec3():			The rotation axis of the matrix (z axis)
 
 		model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));	//Scales the matrix
 
@@ -242,13 +287,22 @@ int main() {
 			//glm::value_ptr(model):	A pointer to the model matrix
 
 		glBindVertexArray(VAO);	// Uses the triangle VAO
-		glDrawArrays(GL_TRIANGLES, 0, 3);
+
+		// glDrawArrays(GL_TRIANGLES, 0, 3);
 			// GL_TRIANGLES: what primitive is being drawn (triangles)
 			// 0: where in the array to start (start at the start of the array)
 			// 3: Amount of points to draw (3 points for a triangle)
 
-		glBindVertexArray(0);	// Unbinds the triangle VAO
-		glUseProgram(0);		// Unbinds the shader program
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);				// Binds the active IBO
+		glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);	// Draws the elements based on the IBO
+			// GL_TRIANGLES:	What primitives are being drawn (triangles)
+			// 12:				How many elements are there to draw (4 triangles have 12 points, so 12)
+			// GL_UNSIGNED_INT:	The format of the data being used (can't have half or negative amounts of verteces, so uint)
+			// 0:				The indices data (Already bound in the previous line, so no need to specify here)
+
+		glBindVertexArray(0);						// Unbinds the triangle VAO
+		glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);	// Unbinds the IBO, remember, unbind IBOs after their respective VAOs
+		glUseProgram(0);							// Unbinds the shader program
 
 		glfwSwapBuffers(mainWindow);	// Swaps the window's current buffer with the buffer the program was working on
 	}

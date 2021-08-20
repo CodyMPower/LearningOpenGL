@@ -1,0 +1,60 @@
+Interpolation
+
+Per-vertex attributes passed on are "interpolated" using the otehr values on the primitive
+"A weighted average of the three vertices on a triangle is passed on"
+Fragment shader uses interpolated values
+The value is an estimate of what the value at the position should be
+
+Examples, using position co-ordinates as RGB values
+	(x = R, y = G, z = B)
+Colour blends in between vertex positions, but those positions were not defined, they were interpolated
+
+Can be used to interpolate texture co-ordinates when mapping textures
+Can be used for interpolating normal vectors when lighting is handled (Phong shading)
+
+Index Draws
+
+Define vertices to draw a cube.
+Cube has 12 triangles, and 36 vertices are needed, 3 per triangle
+A cube only has 8 vertices, thus 28 vertices are redundant
+Why not define the 8 vertices and use their number to draw the triangles?
+
+Bind to an Element array buffer in the VAO
+glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO)
+Sometimes Index is called Element, mean the same thing in this context?
+3D modelling software can be used to create 3D meshes to create more complex
+models without having to specify every coordinate by hand
+
+Projections
+
+Used to convert from "View Space" to "Clip Space"
+Can be used to project 3D objects to a 2D plane more realistically
+Can also be used to create a 2D style for certain objects.
+
+Co-ordinate Systems:
+
+Local space: raw position from the origin. Mul by Model Matrix to get ...
+World space: Position of the vertex in the world if camera is at origin, mul by view matrix to get ...
+View Space: Position of the vertex relative to the camera, multiply by projection matrix to get ...
+Clip Space: Position of the vertex in the world relative to the camera position and orientation, as viewed in the area not to be "clipped" from the final output
+Screen Space: After Cliping takes place, the final image is created and placed on the coordinate system of the window
+
+Define a frustum to create a Clip space, this will define what is not to be clipped
+2 Common projections:
+	Orthographic (Common in 2D, far and near objects are same size)
+	Perspective	(Common in 3D, far objects appear smaller than near objects)
+
+GLM has a function to create a perspective matrix:
+
+glm::mat4 proj = glm::perspective(fov, aspect, near, far);	// Also glm::orthographic() or glm::ortho(), one of them
+
+fov:	field-of-view, the angle of the frustum
+aspect:	aspect ratio of the viewport (usually width/height)
+near:	distance of the near plane
+far:	distance of the far plane
+
+bind the matrix to a uniform in the shader.
+gl_Position = projection * view * model * vec4(pos, 1.0);
+IMPORTAINT AGAIN!! Order of matrix multiplication matters so:
+projection * view * model * vec4(pos, 1.0) becomes:
+Clip Space (projection *) <- View Space (view *) <- World Space (model *) <- Local Space (vec4(pos, 1.0))

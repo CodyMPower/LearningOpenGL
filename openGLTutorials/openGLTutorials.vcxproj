@@ -22,6 +22,7 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="Interp_Index_Project.txt" />
     <Text Include="RenderPipeline.txt" />
     <Text Include="VecMatUni.txt" />
   </ItemGroup>
