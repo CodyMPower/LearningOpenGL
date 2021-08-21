@@ -1,19 +1,15 @@
 #include "GLWindow.h"
 
 GLWindow::GLWindow() {
-	mainWindow = 0;
 	width = 800;
 	height = 600;
-	bufferWidth = 0;
-	bufferHeight = 0;
+	initVariables();
 }
 
 GLWindow::GLWindow(GLint windowWidth, GLint windowHeight) {
-	mainWindow = 0;
 	width = windowWidth;
 	height = windowHeight;
-	bufferWidth = 0;
-	bufferHeight = 0;
+	initVariables();
 }
 
 int GLWindow::Initialise() {
@@ -48,6 +44,9 @@ int GLWindow::Initialise() {
 	glfwGetFramebufferSize(mainWindow, &bufferWidth, &bufferHeight);	// Gets the dimensions of the buffer
 	glfwMakeContextCurrent(mainWindow);									// Set the main window to the current context (window being used)
 
+	createCallbacks();	// Creates key callbacks for the window
+	glfwSetInputMode(mainWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);	// Disables the cursor and locks the cursor to the window
+
 	glewExperimental = GL_TRUE;	// Enables experimental features
 
 	if (glewInit() != GLEW_OK) {	// Check if glew initialised correctly
@@ -61,8 +60,63 @@ int GLWindow::Initialise() {
 
 	glViewport(0, 0, bufferWidth, bufferHeight);	// Sets the view port inside the window (not including the window boarder)
 
+	glfwSetWindowUserPointer(mainWindow, this);	// What window the actions are occuring on, "this" reffers to the structure that owns the window
+
 	return 0;
 
+}
+
+void GLWindow::handleKeys(GLFWwindow* window, int key, int code, int action, int mode) {
+	GLWindow* theWindow = static_cast<GLWindow*>(glfwGetWindowUserPointer(window)); // gets the window user and points to it (the active window class)
+
+	if (key == GLFW_KEY_ESCAPE && action == GLFW_PRESS) {	// If enter was pressed
+		glfwSetWindowShouldClose(window, GL_TRUE);			// The window should close
+	}
+
+	if (key >= 0 && key < 1024) {
+		if (action == GLFW_PRESS) {
+			theWindow->keys[key] = true;
+		}
+
+		else if (action == GLFW_RELEASE) {
+			theWindow->keys[key] = false;
+		}
+	}
+
+}
+
+void GLWindow::createCallbacks() {
+	glfwSetKeyCallback(mainWindow, handleKeys);			// When key callback occurs on mainWindow, send callback to handleKeys
+	glfwSetCursorPosCallback(mainWindow, handleMouse);	// When mouse move callback occurs, send callback to handleMouse
+}
+
+void GLWindow::handleMouse(GLFWwindow* window, double xPos, double yPos) {
+	GLWindow* theWindow = static_cast<GLWindow*>(glfwGetWindowUserPointer(window));
+
+	if (theWindow->mouseFirstMoved) {	// Check if the mouse has been moved before
+		theWindow->lastX = xPos;		// If not, set previous values to the current values
+		theWindow->lastY = yPos;
+		theWindow->mouseFirstMoved = false;
+	}
+
+	theWindow->xChange = xPos - theWindow->lastX;
+	theWindow->yChange = theWindow->lastY - yPos;	//Values fliped so the controls are not inverted
+	
+	theWindow->lastX = xPos;	//Sets the current positions as the previous positions for next callback
+	theWindow->lastY = yPos;
+
+}
+
+GLfloat GLWindow::getXChange() {
+	GLfloat change = xChange;
+	xChange = 0;
+	return change;
+}
+
+GLfloat GLWindow::getYChange() {
+	GLfloat change = yChange;
+	xChange = 0;
+	return change;
 }
 
 GLWindow::~GLWindow() {

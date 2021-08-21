@@ -27,6 +27,9 @@
     <Text Include="Interp_Index_Project.txt">
       <Filter>Source Files\Udemy Notes</Filter>
     </Text>
+    <Text Include="Camera.txt">
+      <Filter>Source Files\Udemy Notes</Filter>
+    </Text>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

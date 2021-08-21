@@ -7,9 +7,9 @@ class Mesh
 public:
 	Mesh();
 
-	void CreateMesh(GLfloat *vertices, unsigned int *indices, unsigned int numOfVertices, unsigned int numOfIndecies);
-	void RenderMesh();
-	void ClearMesh();
+	void CreateMesh(GLfloat *vertices, unsigned int *indices, unsigned int numOfVertices, unsigned int numOfIndecies);	// Creates a mesh
+	void RenderMesh();	// Renders the mesh
+	void ClearMesh();	// Clears the VAO, VBO, and IBO values
 
 	~Mesh();
 

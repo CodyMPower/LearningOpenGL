@@ -25,6 +25,7 @@
     <ClCompile Include="Shader.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <Text Include="Camera.txt" />
     <Text Include="Interp_Index_Project.txt" />
     <Text Include="RenderPipeline.txt" />
     <Text Include="VecMatUni.txt" />

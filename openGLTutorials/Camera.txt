@@ -1,0 +1,64 @@
+Camera:
+Camera process is seen as the "View Space"
+View space is the co-ordinate system relative to the camera
+Vuew Matrix is used to convert from world space to view space
+View matrix requires 4 values: Camera Position, Direction, Right, and Up
+
+Direction: opposite direction of the intuitive "direction", move the world, not the camera (basically point the opposite way the camera is looking)
+Right: Vector to the right of the camers, Cross between Direction and true up vector [0, 1, 0]
+Up: upwards relative to where the camera is facing, can be calculated by cross product between Direction and right vector
+
+|Rx, Ry, Rz, 0|	 	|1, 0, 0, -Px|
+|Ux, Uy, Uz, 0|	 	|0, 1, 0, -Py|
+|Dx, Dy, Dz, 0|	 x	|0, 0, 1, -Pz|
+|0 , 0 , 0 , 1|	 	|0, 0, 0, 1  |
+
+GLM has a function for everything so yay!:
+glm::lookAt(position, target, up);
+position:	camera location
+target:		point for the camera to look at
+up:			the upward direction of the WORLD, not the camera (so [0, 1, 0] normaly)
+
+Apply the matrix to a uniform in the vertex shader
+
+Input: moving the camera
+
+GLFW: glfwGetKey(window, GLFW_KEY_W);	//Can specify any enum pertaining to a key
+then add value to position while key is held
+
+What if one CPU is faster than others?
+
+Delta Time:
+Broad concept
+Basics: Check how much time has passed since last loop
+delta time = currentTime - last time;
+lastTime = currentTime;
+then multiply camera position by deltaTime
+More info at:
+https://gafferongames.com/post/fix_your_timestep/
+
+Turning:
+Three types of angle:
+Pitch:	U-D
+Roll:	TL-TR
+Yaw:	L-R
+
+Pitch depends on yaw usually, need to update axis
+
+y = sin(pitch)
+x = cos(pitch)
+z = cos(pitch)
+
+Yaw isn't based on pitch:
+x = cos(yaw)
+z = sin(yaw)
+no update to y
+
+combine values:
+x = cos(pitch) * cos(yaw)
+y = sin(pitch)
+z = cos(pitch) * sin*=(yaw)
+
+GLFW: glfwSetCursorPosCallback(window, callback);
+compare old mouse position to new mouse position
+

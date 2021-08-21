@@ -12,23 +12,23 @@ public:
 
 	Shader();
 
-	void CreateFromString(const char* vertexCode, const char* fragmentCode);
-	void CreateFromFile(const char* vertexLocation, const char* fragmentLocation);
+	void CreateFromString(const char* vertexCode, const char* fragmentCode);		// Creates a shader program from char strings
+	void CreateFromFile(const char* vertexLocation, const char* fragmentLocation);	// Creates a shader program from files
 
-	std::string ReadFile(const char* fileLocation);
+	std::string ReadFile(const char* fileLocation);	// Reads a file and coppies the file to a string
 
-	GLuint GetProjectionLocation();
-	GLuint GetModelLocation();
+	GLuint GetProjectionLocation() { return uniformProjection; }	// Gets the location of the projection uniform
+	GLuint GetModelLocation() { return uniformModel; }				// Gets the location of the model uniform
 
-	void UseShader();
-	void ClearShader();
+	void UseShader();	// Uses the shader for rendering
+	void ClearShader();	// Clears the shader program
 
 	~Shader();
 
 private:
 	GLuint shaderID, uniformProjection, uniformModel;
 
-	void CompileShader(const char* vertexCode, const char* fragmentCode);
-	void AddShader(GLuint shaderProgram, const char* shaderCode, GLenum shaderType);
+	void CompileShader(const char* vertexCode, const char* fragmentCode);				// Compiles the shader program and shaders
+	void AddShader(GLuint shaderProgram, const char* shaderCode, GLenum shaderType);	// Adds a shader to the shader program
 };
 

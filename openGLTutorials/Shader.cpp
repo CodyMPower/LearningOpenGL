@@ -11,10 +11,10 @@ void Shader::CreateFromString(const char* vertexCode, const char* fragmentCode) 
 }
 
 void Shader::CreateFromFile(const char* vertexLocation, const char* fragmentLocation) {
-	std::string vertexString = ReadFile(vertexLocation);
-	const char* vertexCode = vertexString.c_str();
+	std::string vertexString = ReadFile(vertexLocation);	// Coppies shader code from file to application
+	const char* vertexCode = vertexString.c_str();			// Converts string to char string
 
-	std::string fragmentString = ReadFile(fragmentLocation);
+	std::string fragmentString = ReadFile(fragmentLocation);	
 	const char* fragmentCode = fragmentString.c_str();
 
 	CompileShader(vertexCode, fragmentCode);
@@ -25,13 +25,13 @@ std::string Shader::ReadFile(const char* fileLocation) {
 	std::ifstream fileStream(fileLocation, std::ios::in);
 
 	if (!fileStream.is_open()) {
-		printf("Failed to read '%s', file does not exist or could not be found at the location");
+		printf("Failed to read '%s', file does not exist or could not be found at the location", fileLocation);
 		return "";
 	}
 
 	std::string line = "";
 	while (!fileStream.eof()) {
-		std::getline(fileStream, line);
+		std::getline(fileStream, line);	// Coppies data line from file to the application
 		content.append(line + "\n");
 	}
 
@@ -54,7 +54,7 @@ void Shader::UseShader() {
 
 void Shader::ClearShader() {
 	if (shaderID != 0) {
-		glDeleteProgram(shaderID);
+		glDeleteProgram(shaderID);	// Deletes the shader program from the GPU
 		shaderID = 0;
 	}
 
