@@ -11,21 +11,22 @@
 #include <glm/gtc/type_ptr.hpp>
 
 #include "Mesh.h"
-
-const GLint WIDTH = 800, HEIGHT = 600;	// Window Dimensions
-
-GLuint shader, uniformModel, uniformProjection;	// Shader variables
+#include "Shader.h"
+#include "GLWindow.h"
 
 std::vector<Mesh*> meshList;
+std::vector<Shader*> shaderList;
+
+GLWindow mainWindow;
 
 bool leftDirection = true;		// Is the triangle moving left?
 float triOffset = 0.0f;			// The current offset
 float triMaxOffset = 0.7f;		// The maximum offset of the triangle
-float triIncrement = 0.005f;	// The increment value to the offset
+float triIncrement = 0.001f;	// The increment value to the offset
 
 float toRadians = 3.14159265f / 180.0f;
 float curAngle = 0.0f;
-float angleIncrement = 0.5f;
+float angleIncrement = 0.1f;
 
 /*	Vertex Shader
 	gl_Position is a predefined out vec4 variable
@@ -34,39 +35,15 @@ float angleIncrement = 0.5f;
 	projection is the frustrum of view that the camera will see	(View Space -> Clip space)
 	vCol is the color based on the position of the vertex
 */
-static const char* vShader = "								\n\
-#version 330												\n\
-															\n\
-layout (location = 0) in vec3 pos;							\n\
-															\n\
-uniform mat4 model;											\n\
-uniform mat4 projection;									\n\
-															\n\
-out vec4 vCol;												\n\
-															\n\
-void main(){												\n\
-	gl_Position = projection * model * vec4(pos, 1.0f);		\n\
-	vCol = vec4(clamp(pos, 0.0f, 1.0f), 1.0f);				\n\
-}															\n\
-";
+static const char* vShader = "Shaders/shader.vert";
 
 /*	Fragment Shader
 	any out vec4 will be assumed to be the colour of the pixel on the screen
 	vCol is interpolated based on the location of the fragment shader within the triangle
 */
-static const char* fShader = "								\n\
-#version 330												\n\
-															\n\
-in vec4 vCol;												\n\
-															\n\
-out vec4 colour;											\n\
-															\n\
-void main(){												\n\
-	colour = vCol;											\n\
-}															\n\
-";
+static const char* fShader = "Shaders/shader.frag";
 
-void CreateShape() {
+void CreateObject() {
 	GLfloat vertices[] = {
 		-1.0f, -1.0f, 0.0f,	// Point 0
 		0.0f , -1.0f, 1.0f,	// Point 1
@@ -87,127 +64,26 @@ void CreateShape() {
 
 }
 
-void AddShader(GLuint shaderProgram, const char* shaderCode, GLenum shaderType) {
-	GLuint theShader = glCreateShader(shaderType);	// Creates an ID for the shader type specified
-
-	const GLchar* theCode[1];	// A char pointer in an array to point to the shader code
-	theCode[0] = shaderCode;	// Pointer points to the shader code
-
-	GLint codeLength[1];				// A GLint in an array to store the length of the shader code
-	codeLength[0] = strlen(shaderCode);	// Stores the length of the shader code
-
-	glShaderSource(theShader, 1, theCode, codeLength);
-		// Passes the shader code to the created shader
-		// theShader: the shader to pass the code to
-		// 1: how many shader code segments are being passed
-		// theCode: an array of pointer(s) that point to the code of the shader
-		// codeLength: an array of GLint(s) that specify how long each code segment is
-
-	glCompileShader(theShader);	// Compiles the shader
-
-	GLint result = 0;				// Sets up a variable to store the shader status results
-	GLchar errorLog[1024] = { 0 };	// Sets up a char array to stor any errors that may have occured
-
-	glGetShaderiv(theShader, GL_COMPILE_STATUS, &result);	// Gets the result of the Compilation process
-
-	if (!result) {
-		glGetShaderInfoLog(theShader, sizeof(errorLog), NULL, errorLog);
-		printf("Failed to Link '%d' Shader: '%s'\n", shaderType, errorLog);
-		return;
-	}
-
-	glAttachShader(shaderProgram, theShader);	// Attaches the shader to the shader program
+void CreateShader() {
+	Shader* shader1 = new Shader();
+	shader1->CreateFromFile(vShader, fShader);
+	shaderList.push_back(shader1);
 }
 
-void CompileShaders() {
-	shader = glCreateProgram();	// Creates a shader program ID
-	
-	if (!shader) {	// Check if the shader program was created successfully
-		printf("Failed to Create Shader Program");
-		return;
-	}
-
-	AddShader(shader, vShader, GL_VERTEX_SHADER);	// Assigns a vertex shader to the shader program
-	AddShader(shader, fShader, GL_FRAGMENT_SHADER);	// Assigns a fragment shader to the shader program
-
-	GLint result = 0;
-	GLchar errorLog[1024] = { 0 };
-
-	glLinkProgram(shader);								// Links the shader program
-	glGetProgramiv(shader, GL_LINK_STATUS, &result);	// Gets the result of the linkage process
-
-	if (!result) {
-		glGetProgramInfoLog(shader, sizeof(errorLog), NULL, errorLog);
-		printf("Failed to Link Program: '%s'\n", errorLog);
-		return;
-	}
-
-	glValidateProgram(shader);								// Validates the shader program
-	glGetProgramiv(shader, GL_VALIDATE_STATUS, &result);	// Gets the result of the validation process
-
-	if (!result) {
-		glGetProgramInfoLog(shader, sizeof(errorLog), NULL, errorLog);
-		printf("Failed to Validate Program: '%s'\n", errorLog);
-		return;
-	}
-
-	uniformModel = glGetUniformLocation(shader, "model");		// Gets the location of the uniform variable "model"
-	uniformProjection = glGetUniformLocation(shader, "projection");	// Gets the location of the uniform variable "model"
-
-}
 
 int main() {
-	// Initialise GLFW
-	if (!glfwInit()) {	// Check if glfw initialised correctly
-		printf("Failed to Initialise GLFW");
-		glfwTerminate();
+
+	mainWindow = GLWindow(800, 600);
+	if (mainWindow.Initialise() != 0) {
 		return 1;
 	}
 
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);	// Major version 3 of OpenGL
-	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);	// Minor version 3 of OpenGL
-													// Final version 3.3 of OpenGL
+	CreateObject();		// Creates a simple shape with 4 triangles
+	CreateShader();	// Compiles a shader program with vShader and fShader
 
-	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);	// Disallows backwards compatability
-	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);			// Allows forwards compatability
+	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)(mainWindow.getBufferWidth()/mainWindow.getBufferHeight()), 0.1f, 100.0f); // Only really need to create it once, unless you're manipulating the projection every frame
 
-	GLFWwindow *mainWindow = glfwCreateWindow(WIDTH, HEIGHT, "Test Window", NULL, NULL);
-		// Creates a new window
-		// WIDTH:	width of the new window
-		// HEIGHT:	height of the new window
-		// "Test Window":	Name of the window
-		// NULL:	What monitor to display to
-		// NULL:	?
-
-	if (!mainWindow) {	// Check if the window was created correctly
-		printf("Window Creation Failed");
-		glfwTerminate();
-		return 1;
-	}
-
-	int bufferWidth, bufferHeight;										// Store the dimensions of the window buffer
-	glfwGetFramebufferSize(mainWindow, &bufferWidth, &bufferHeight);	// Gets the dimensions of the buffer
-	glfwMakeContextCurrent(mainWindow);									// Set the main window to the current context (window being used)
-
-	glewExperimental = GL_TRUE;	// Enables experimental features
-
-	if (glewInit() != GLEW_OK) {	// Check if glew initialised correctly
-		printf("Failed to Initalise GLEW");
-		glfwDestroyWindow(mainWindow);
-		glfwTerminate();
-		return 1;
-	}
-
-	glEnable(GL_DEPTH_TEST);	// Enables Depth testing for proper ordering of primatives (triangle should be behind instead of infront ect)
-
-	glViewport(0, 0, bufferWidth, bufferHeight);	// Sets the view port inside the window (not including the window boarder)
-
-	CreateShape();		// Creates a simple shape with 4 triangles
-	CompileShaders();	// Compiles a shader program with vShader and fShader
-
-	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)(bufferWidth/bufferHeight), 0.1f, 100.0f); // Only really need to create it once, unless you're manipulating the projection every frame
-
-	while (!glfwWindowShouldClose(mainWindow)) {
+	while (!mainWindow.getShouldClose()) {
 		glfwPollEvents();	// Gets user input events
 
 		if (leftDirection) {
@@ -229,7 +105,7 @@ int main() {
 		glClearColor(0.0f, 0.0f, 0.0f, 0.0f);				// Sets the clear color to black
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clears the screen color and depth, color cleared to specified clear color
 
-		glUseProgram(shader);	// Uses the designated shader
+		shaderList[0]->UseShader();
 
 		glm::mat4 model(1.0f);												// Creates an identity matrix
 		model = glm::translate(model, glm::vec3(0.0f, triOffset, -2.5f));	// Applies a translation to the model matrix
@@ -239,6 +115,10 @@ int main() {
 		//glm::vec3():			The rotation axis of the matrix (z axis)
 
 		model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));	//Scales the matrix
+
+		GLuint uniformModel = 0, uniformProjection = 0;
+		uniformModel = shaderList[0]->GetModelLocation();
+		uniformProjection = shaderList[0]->GetProjectionLocation();
 
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 			//uniformModel:				The matrix to pass though
@@ -264,11 +144,10 @@ int main() {
 
 		glUseProgram(0);							// Unbinds the shader program
 
-		glfwSwapBuffers(mainWindow);	// Swaps the window's current buffer with the buffer the program was working on
+		mainWindow.swapBuffers();	// Swaps the window's current buffer with the buffer the program was working on
 	}
 
-	glfwDestroyWindow(mainWindow);	// Destroys the window after use
-	glfwTerminate();				// Terminates GLFW after use
+	mainWindow.~GLWindow();	// Destroys the window after use
 
 	return 0;
 
