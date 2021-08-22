@@ -115,7 +115,7 @@ GLfloat GLWindow::getXChange() {
 
 GLfloat GLWindow::getYChange() {
 	GLfloat change = yChange;
-	xChange = 0;
+	yChange = 0;
 	return change;
 }
 

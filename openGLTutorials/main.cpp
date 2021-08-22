@@ -13,11 +13,16 @@
 #include "Mesh.h"
 #include "Shader.h"
 #include "GLWindow.h"
+#include "Camera.h"
 
 std::vector<Mesh*> meshList;
 std::vector<Shader*> shaderList;
+Camera camera;
 
 GLWindow mainWindow;
+
+GLfloat deltaTime = 0.0f;
+GLfloat lastTime = 0.0f;
 
 bool leftDirection = true;		// Is the triangle moving left?
 float triOffset = 0.0f;			// The current offset
@@ -81,10 +86,19 @@ int main() {
 	CreateObject();		// Creates a simple shape with 4 triangles
 	CreateShader();	// Compiles a shader program with vShader and fShader
 
+	camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 5.0f, 0.5f);	// Sets up camera properties
+
+	GLuint uniformModel = 0, uniformProjection = 0, uniformView = 0;	// Uniform IDs for the vertex shader
 	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)(mainWindow.getBufferWidth()/mainWindow.getBufferHeight()), 0.1f, 100.0f); // Only really need to create it once, unless you're manipulating the projection every frame
 
 	while (!mainWindow.getShouldClose()) {
+		GLfloat now = glfwGetTime();	// (SDL_GetPerformanceCounter(), not returned in seconds)	Gets the current time
+		deltaTime = now - lastTime;		// ((now - lastTime) * 1000 / SDL_GetPerformanveFrequency)	Gets the change in ime from last itteration to current
+		lastTime = now;
+
 		glfwPollEvents();	// Gets user input events
+		camera.keyControl(mainWindow.getKeys(), deltaTime);						// Updates camera location based on keyboard input
+		camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());	// Updates camera rotations based on changes in cursor locations
 
 		if (leftDirection) {
 			triOffset += triIncrement;
@@ -116,9 +130,9 @@ int main() {
 
 		model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));	//Scales the matrix
 
-		GLuint uniformModel = 0, uniformProjection = 0;
 		uniformModel = shaderList[0]->GetModelLocation();
 		uniformProjection = shaderList[0]->GetProjectionLocation();
+		uniformView = shaderList[0]->GetViewLocation();
 
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 			//uniformModel:				The matrix to pass though
@@ -126,6 +140,7 @@ int main() {
 			//GL_FALSE:					Should the matrix be transposed (flipped) (false)
 			//glm::value_ptr(model):	A pointer to the model matrix
 		glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
+		glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
 
 		meshList[0]->RenderMesh();	// Calls the render function of the mesh at the first index
 

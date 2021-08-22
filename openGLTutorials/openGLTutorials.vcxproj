@@ -19,6 +19,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Camera.cpp" />
     <ClCompile Include="GLWindow.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
@@ -28,9 +29,11 @@
     <Text Include="Camera.txt" />
     <Text Include="Interp_Index_Project.txt" />
     <Text Include="RenderPipeline.txt" />
+    <Text Include="Texture-ImageLoad.txt" />
     <Text Include="VecMatUni.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Camera.h" />
     <ClInclude Include="GLWindow.h" />
     <ClInclude Include="Mesh.h" />
     <ClInclude Include="Shader.h" />
