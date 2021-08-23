@@ -27,21 +27,25 @@ void Mesh::CreateMesh(GLfloat* vertices, unsigned int* indices, unsigned int num
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);															// Binds the IBO to the element array buffer inside the VAO
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(indices[0]) * numOfIndecies, indices, GL_STATIC_DRAW);	// Buffers the data of the indices order to the IBO's buffer
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-	// 0:			Location of the attribute pointer (location 0 as specified in the vertex shader)
-	// 3:			The amount of data to pass though the attribute pointer (the x, y, and z values of the vertex)
-	// GL_FLOAT:	The type of data being passed (float)
-	// GL_FALSE:	Is the data normalized? (false)
-	// 0:			How much data is skipped between each data chunk used (don't skip any data) (can be used if texture coordinates are included in the buffer)
-	// 0:			The offset of where the data will start being read from (start at the start of the buffer)
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]) * 5, 0);
+	// 0:						Location of the attribute pointer (location 0 as specified in the vertex shader)
+	// 3:						The amount of data to pass though the attribute pointer (the x, y, and z values of the vertex)
+	// GL_FLOAT:				The type of data being passed (float)
+	// GL_FALSE:				Is the data normalized? (false)
+	// sizeof(vertices[0]) * 5:	How much data is skipped between each data chunk used (skip 2 texture values after the 3 coord values) (can be used if texture coordinates are included in the buffer)
+	// 0:						The offset of where the data will start being read from (start at the start of the buffer)
 
 	glEnableVertexAttribArray(0);	// Enable the attrib array at location 0
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]) * 5, (void*)(sizeof(vertices[0]) * 3));	// Creates attribute pointer for location 1, texture attrib
+	glEnableVertexAttribArray(1);	// Enable attrib pointer 1
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);	// Unbinds the VBO at the array buffer location
 	glBindVertexArray(0);				// Unbinds the VAO
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);	// Unbind IBO after unbinding VAO
 	// The IBO is unbound after the VAO as the VAO can only contain 1 IBO, thus unbinding beforehand will result in the removal of the IBO
 	// The VBO is unbound before the VAO as the VAO can contain multiple VBOs, thus unbinding th VBO beforehand will not result in it's removal from the VAO
+
+	indexCount = numOfIndecies;
 
 }
 
@@ -54,9 +58,9 @@ void Mesh::RenderMesh() {
 			// 0: where in the array to start (start at the start of the array)
 			// 3: Amount of points to draw (3 points for a triangle)
 
-	glDrawElements(GL_TRIANGLES, 12, GL_UNSIGNED_INT, 0);	// Draws the elements based on the IBO
+	glDrawElements(GL_TRIANGLES, indexCount, GL_UNSIGNED_INT, 0);	// Draws the elements based on the IBO
 		// GL_TRIANGLES:	What primitives are being drawn (triangles)
-		// 12:				How many elements are there to draw (4 triangles have 12 points, so 12)
+		// indexCount:		How many elements are there to draw (num of indices)
 		// GL_UNSIGNED_INT:	The format of the data being used (can't have half or negative amounts of verteces, so uint)
 		// 0:				The indices data (Already bound in the previous line, so no need to specify here)
 
