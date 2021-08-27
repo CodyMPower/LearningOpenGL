@@ -88,27 +88,30 @@ void CreateShader() {
 	shaderList.push_back(shader1);
 }
 
-/*
 void CreatePlane(int rows, int cols) {
 	if (rows < 2 || cols < 2) {
 		return;
 	}
 
-	GLfloat xOff = ((float)rows) / 2;
-	GLfloat yOff = ((float)cols) / 2;
+	GLfloat xOff = (float) ((rows - 1) / 2);
+	xOff += (rows % 2 == 0) ? 0.5f: 0.0f;
+	GLfloat yOff = (float)((cols - 1) / 2);
+	yOff += (cols % 2 == 0) ? 0.5f : 0.0f;
 
-	const int vertSize = rows * cols * 3;
+	const int vertSize = rows * cols * 3 + 2 * (rows * cols);
 	const int indSize = (cols - 1) * (rows - 1) * 6;
 
-	GLfloat vertices[vertSize];
-	unsigned int indices[indSize];
+	GLfloat *vertices = new GLfloat[vertSize];
+	unsigned int *indices = new unsigned int[indSize];
+	
+	for (int X = 0; X < rows; X++) {
 
-	for (GLint X = 0; X < rows; X++) {
-
-		for (GLint P = 0; P < cols; P++) {
-			vertices[((X * cols) + P) * 3]		= (GLfloat) (P - xOff);
-			vertices[((X * cols) + P) * 3 + 1]	= (GLfloat) (X - yOff);
-			vertices[((X * cols) + P) * 3 + 2]	= (GLfloat) (-1.0f);
+		for (int P = 0; P < cols; P++) {
+			vertices[((X * cols) + P) * 5]	   = (GLfloat) (P - xOff);
+			vertices[((X * cols) + P) * 5 + 1] = (GLfloat) (X - yOff);
+			vertices[((X * cols) + P) * 5 + 2] = (GLfloat) (0.0f);
+			vertices[((X * cols) + P) * 5 + 3] = (GLfloat)(0.0f);
+			vertices[((X * cols) + P) * 5 + 4] = (GLfloat)(0.0f);
 		}
 
 	}
@@ -117,47 +120,17 @@ void CreatePlane(int rows, int cols) {
 
 		for (int P = 0; P < cols - 1; P++) {
 			int newSquare[6];
-			newSquare[0] = X * cols + P;
-			newSquare[1] = X * cols + (P + 1);
-			newSquare[2] = (X + 1) * cols + P;
-			newSquare[3] = X * cols + (P + 1);
-			newSquare[4] = (X + 1) * cols + (P + 1);
-			newSquare[5] = (X + 1) * cols + P;
+			newSquare[0] = (X * cols) + P;
+			newSquare[1] = (X * cols) + (P + 1);
+			newSquare[2] = ((X + 1) * cols) + P;
+			newSquare[3] = (X * cols) + (P + 1);
+			newSquare[4] = ((X + 1) * cols) + (P + 1);
+			newSquare[5] = ((X + 1) * cols) + P;
 
 			for (int i = 0; i < 6; i++) {
-				indices[((X * cols - 1) + P) * 6 + i] = newSquare[i];
+				indices[((X * (cols - 1)) + P) * 6 + i] = newSquare[i];
 			}
-
-		}
-
-	}
-
-	printf("Vertices values: Size: %d\n", vertSize);
-
-	for (int X = 0; X < rows; X++) {
-		printf("Row: %d\n", X);
-
-		for (int P = 0; P < cols; P++) {
-			printf("X coord: '%.6f' " , (float) vertices[((X * cols) + P) * 3]);
-			printf("Y coord: '%.6f' " , (float) vertices[((X * cols) + P) * 3 + 1]);
-			printf("Z coord: '%.6f'\n", (float) vertices[((X * cols) + P) * 3 + 2]);
-		}
-
-	}
-
-	printf("\n");
-	printf("Indices values: Size: %d\n", indSize);
-
-	for (int X = 0; X < rows - 1; X++) {
-		printf("Row: %d\n", X);
-
-		for (int P = 0; P < cols - 1; P++) {
-			printf("X coord: '%u' " , indices[((X * cols - 1) + P) * 6]);
-			printf("Y coord: '%u' " , indices[((X * cols - 1) + P) * 6 + 1]);
-			printf("Z coord: '%u' " , indices[((X * cols - 1) + P) * 6 + 2]);
-			printf("Z coord: '%u' " , indices[((X * cols - 1) + P) * 6 + 3]);
-			printf("Z coord: '%u' " , indices[((X * cols - 1) + P) * 6 + 4]);
-			printf("Z coord: '%u'\n", indices[((X * cols - 1) + P) * 6 + 5]);
+			
 		}
 
 	}
@@ -167,8 +140,6 @@ void CreatePlane(int rows, int cols) {
 	meshList.push_back(obj1);	// Adds a new element to the end of the vector
 
 }
-
-*/
 
 int main() {
 
