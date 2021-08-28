@@ -22,6 +22,8 @@ public:
 	GLuint GetViewLocation() { return uniformView; }							// Gets the location of the view uniform
 	GLuint GetAmbientIntensityLocation() { return uniformAmbientIntensity; }	// Gets the location of the ambientIntensity uniform
 	GLuint GetAmbientColourLocation() { return uniformAmbientColour; }			// Gets the location of the ambientColour uniform
+	GLuint GetDiffuseIntensityLocation() { return uniformDiffuseIntensity; }	// Gets the location of the diffuseIntensity uniform
+	GLuint GetDirectionLocation() { return uniformDirection; }					// Gets the location of the direction uniform
 
 	void UseShader();	// Uses the shader for rendering
 	void ClearShader();	// Clears the shader program
@@ -29,7 +31,8 @@ public:
 	~Shader();
 
 private:
-	GLuint shaderID, uniformProjection, uniformModel, uniformView, uniformAmbientIntensity, uniformAmbientColour;
+	GLuint shaderID, uniformProjection, uniformModel, uniformView, 
+		uniformAmbientIntensity, uniformAmbientColour, uniformDiffuseIntensity, uniformDirection;
 
 	void CompileShader(const char* vertexCode, const char* fragmentCode);				// Compiles the shader program and shaders
 	void AddShader(GLuint shaderProgram, const char* shaderCode, GLenum shaderType);	// Adds a shader to the shader program

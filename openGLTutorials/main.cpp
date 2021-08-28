@@ -57,19 +57,71 @@ static const char* vShader = "Shaders/shader.vert";
 */
 static const char* fShader = "Shaders/shader.frag";
 
+/*
+Calculates the normals for each vertex
+
+indices: a pointer to an indices array
+indCount: how many indices are there?
+vertices: a pointer to a vertices array
+vertCount: how many vertice values are there total? (len of the array)
+vLength: the size of each vertex information packet (how many coordinate values, tex coordinates, normal coordinates ect. values per vertex)
+normalOffset: how far from the start of an information packet is the normal information stored?
+*/
+void calcAverageNormals(unsigned int* indices, unsigned int indCount, GLfloat *vertices, unsigned int vertCount, 
+						unsigned int vLength, unsigned int normalOffset) {
+	for (size_t i = 0; i < indCount; i += 3) {
+		unsigned int ind0 = indices[i]	   * vLength;
+		unsigned int ind1 = indices[i + 1] * vLength;
+		unsigned int ind2 = indices[i + 2] * vLength;
+
+		glm::vec3 v1(vertices[ind1] - vertices[ind0], vertices[ind1 + 1] - vertices[ind0 + 1], vertices[ind1 + 2] - vertices[ind0 + 2]);
+		glm::vec3 v2(vertices[ind2] - vertices[ind0], vertices[ind2 + 1] - vertices[ind0 + 1], vertices[ind2 + 2] - vertices[ind0 + 2]);
+		glm::vec3 normal = glm::normalize(glm::cross(v1, v2));	// Normal of the triangle
+
+		vertices[ind0 + normalOffset + 0] += normal.x;
+		vertices[ind1 + normalOffset + 0] += normal.x;
+		vertices[ind2 + normalOffset + 0] += normal.x;
+
+		vertices[ind0 + normalOffset + 1] += normal.y;
+		vertices[ind1 + normalOffset + 1] += normal.y;
+		vertices[ind2 + normalOffset + 1] += normal.y;
+
+		vertices[ind0 + normalOffset + 2] += normal.z;
+		vertices[ind1 + normalOffset + 2] += normal.z;
+		vertices[ind2 + normalOffset + 2] += normal.z;
+	}
+
+	for (size_t i = 0; i < vertCount; i += vLength) {
+		unsigned int relOffset = i + normalOffset;
+
+		glm::vec3  vec(vertices[relOffset], vertices[relOffset + 1], vertices[relOffset + 2]);
+		vec = glm::normalize(vec);
+
+		vertices[relOffset + 0] = vec.x;
+		vertices[relOffset + 1] = vec.y;
+		vertices[relOffset + 2] = vec.z;
+
+	}
+}
+
 void CreateObject() {
 	GLfloat vertices[] = {
 		-1.0f, -1.0f, 0.0f,	// Point 0
-		0.0f , 0.0f ,	// Tex Coord 0
+		0.0f , 0.0f ,		// Tex Coord 0
+		0.0f, 0.0f, 0.0f,	// Temp Normal 0
 
 		0.0f , -1.0f, 1.0f,	// Point 1
-		0.5f , 0.0f ,	// Tex Coord 1
+		0.5f , 0.0f ,		// Tex Coord 1
+		0.0f, 0.0f, 0.0f,	// Temp Normal 1
 
 		1.0f , -1.0f, 0.0f,	// Point 2
-		1.0f , 0.0f ,	// Tex Coord 2
+		1.0f , 0.0f ,		// Tex Coord 2
+		0.0f, 0.0f, 0.0f,	// Temp Normal 2
 
 		0.0f , 1.0f , 0.0f,	// Point 3
-		0.5f , 1.0f		// Tex Coord 3
+		0.5f , 1.0f,		// Tex Coord 3
+		0.0f, 0.0f, 0.0f,	// Temp Normal 3
+
 	};
 
 	unsigned int indices[] = {
@@ -79,8 +131,10 @@ void CreateObject() {
 		0, 1, 2		// 
 	};
 	
+	calcAverageNormals(indices, 12, vertices, 32, 8, 5);
+
 	Mesh* obj1 = new Mesh();
-	obj1->CreateMesh(vertices, indices, 20, 12);
+	obj1->CreateMesh(vertices, indices, 32, 12);
 	meshList.push_back(obj1);	// Adds a new element to the end of the vector
 
 }
@@ -96,6 +150,8 @@ void CreatePlane(int rows, int cols) {
 		return;
 	}
 
+	int vertInfoSize = 8;
+
 	// Creates offsets to center the plane relative to (0, 0)
 	GLfloat xOff = (float) ((rows - 1) / 2);
 	xOff += (rows % 2 == 0) ? 0.5f: 0.0f;
@@ -103,7 +159,7 @@ void CreatePlane(int rows, int cols) {
 	yOff += (cols % 2 == 0) ? 0.5f : 0.0f;
 
 	// The size of the vertex and index buffers taking into account the 2 tex coords per 3 vert coords
-	const int vertSize = rows * cols * 3 + 2 * (rows * cols);
+	const int vertSize = rows * cols * vertInfoSize;
 	const int indSize = (cols - 1) * (rows - 1) * 6;
 
 	// Creates pointers to arrays of the above sizes
@@ -114,11 +170,11 @@ void CreatePlane(int rows, int cols) {
 	for (int X = 0; X < rows; X++) {
 
 		for (int P = 0; P < cols; P++) {
-			vertices[((X * cols) + P) * 5]	   = (GLfloat) (P - xOff);	// X coord
-			vertices[((X * cols) + P) * 5 + 1] = (GLfloat) (X - yOff);	// Y coord
-			vertices[((X * cols) + P) * 5 + 2] = (GLfloat) (0.0f);		// Z coord, placed at origin
-			vertices[((X * cols) + P) * 5 + 3] = (GLfloat) (P);			// S tex coord
-			vertices[((X * cols) + P) * 5 + 4] = (GLfloat) (X);			// T tex coord
+			vertices[((X * cols) + P) * vertInfoSize]	   = (GLfloat) (P - xOff);	// X coord
+			vertices[((X * cols) + P) * vertInfoSize + 1] = (GLfloat) (X - yOff);	// Y coord
+			vertices[((X * cols) + P) * vertInfoSize + 2] = (GLfloat) (0.0f);		// Z coord, placed at origin
+			vertices[((X * cols) + P) * vertInfoSize + 3] = (GLfloat) (P);			// S tex coord
+			vertices[((X * cols) + P) * vertInfoSize + 4] = (GLfloat) (X);			// T tex coord
 		}
 
 	}
@@ -142,6 +198,8 @@ void CreatePlane(int rows, int cols) {
 		}
 
 	}
+
+	calcAverageNormals(indices, indSize, vertices, vertSize, vertInfoSize, 5);
 
 	// Create a mesh and store the mesh pointer to the mesh list
 	Mesh* obj1 = new Mesh();
@@ -172,11 +230,14 @@ int main() {
 	dirtTexture = Texture((char*) "Textures/dirt.jpg");
 	dirtTexture.LoadTexture();
 
-				   // R   , G   , B   , Intensity
-	mainLight = Light(1.0f, 1.0f, 1.0f, 1.0f);
+				   // R   , G   , B   , ambient intensity
+	mainLight = Light(1.0f, 1.0f, 1.0f, 1.0f, 
+		//x, y	  , z	 , diffuse intensity
+		2.0, -1.0f, -2.0f, 1.0f);
 
 	// Creates variables for uniform locations
-	GLuint uniformModel = 0, uniformProjection = 0, uniformView = 0, uniformAmbientIntensity = 0, uniformAmbientColour = 0;	// Uniform IDs for the vertex shader
+	GLuint uniformModel = 0, uniformProjection = 0, uniformView = 0,
+		uniformAmbientIntensity = 0, uniformAmbientColour = 0, uniformDiffuseIntensity = 0, uniformDirection = 0;	// Uniform IDs for the vertex shader
 
 	// Creates a projection (perspective) matrix
 	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)(mainWindow.getBufferWidth()/mainWindow.getBufferHeight()), 0.1f, 100.0f); // Only really need to create it once, unless you're manipulating the projection every frame
@@ -228,8 +289,11 @@ int main() {
 		uniformView					= shaderList[0]->GetViewLocation();
 		uniformAmbientIntensity		= shaderList[0]->GetAmbientIntensityLocation();
 		uniformAmbientColour		= shaderList[0]->GetAmbientColourLocation();
-		
-		mainLight.UseLight(uniformAmbientIntensity, uniformAmbientColour);
+		uniformDiffuseIntensity		= shaderList[0]->GetDiffuseIntensityLocation();
+		uniformDirection			= shaderList[0]->GetDirectionLocation();
+
+		mainLight.UseLight(uniformAmbientIntensity, uniformAmbientColour,
+							uniformDiffuseIntensity, uniformDirection);
 
 		// Assigns the matrices to their respective uniform variables
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));

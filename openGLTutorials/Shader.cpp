@@ -96,6 +96,9 @@ void Shader::CompileShader(const char* vertexCode, const char* fragmentCode) {
 	uniformView				= glGetUniformLocation(shaderID, "view");								// Gets the location of the unifrom variable "view"
 	uniformAmbientIntensity = glGetUniformLocation(shaderID, "directionalLight.ambientIntensity");	// Gets the location of the uniform variable "ambientIntensity" inside the uniform struct "directionalLight"
 	uniformAmbientColour	= glGetUniformLocation(shaderID, "directionalLight.colour");			// Gets the location of the unifrom variable "colour" inside the uniform struct "directionalLight"
+	uniformDiffuseIntensity	= glGetUniformLocation(shaderID, "directionalLight.diffuseIntensity");	// Gets the location of the uniform variable "ambientIntensity" inside the uniform struct "directionalLight"
+	uniformDirection		= glGetUniformLocation(shaderID, "directionalLight.direction");			// Gets the location of the unifrom variable "colour" inside the uniform struct "directionalLight"
+
 }
 
 void Shader::AddShader(GLuint shaderProgram, const char* shaderCode, GLenum shaderType) {
