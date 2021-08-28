@@ -19,7 +19,7 @@ Texture::Texture(char* fileLoc) {
 void Texture::LoadTexture() {
 	unsigned char* texData = stbi_load(fileLocation, &width, &height, &bitDepth, STBI_rgb_alpha);	// Gets the texture Data from a file
 
-	if (!texData) {
+	if (!texData) {	// Check if texData recieved the texture data from the image
 		printf("Failed to find: '%s'\n", fileLocation);
 	}
 

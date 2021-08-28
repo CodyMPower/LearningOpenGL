@@ -27,10 +27,10 @@ Camera::Camera(glm::vec3 startPosition, glm::vec3 startUp, GLfloat startYaw, GLf
 }
 
 void Camera::update() {
-	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));
+	front.x = cos(glm::radians(yaw)) * cos(glm::radians(pitch));	// Finds the "front" camera vector coordinates using the pitch and yaw values
 	front.y = sin(glm::radians(pitch));
 	front.z = sin(glm::radians(yaw)) * cos(glm::radians(pitch));
-	front = glm::normalize(front);
+	front = glm::normalize(front);									// Normalizes the vector (magnitude = 1)
 
 	right = glm::normalize(glm::cross(front, worldUp));	// Normalized crossproduct of front x worldUp, order matters
 	up = glm::normalize(glm::cross(right, front));		// Order also matters here, right x front
@@ -40,6 +40,7 @@ void Camera::update() {
 void Camera::keyControl(bool* keys, GLfloat deltaTime) {
 	GLfloat velocity = moveSpeed * deltaTime;
 
+	// Check if any given key is currently being activated
 	if (keys[GLFW_KEY_W])	{
 		position += front * velocity;
 	}
@@ -85,7 +86,7 @@ void Camera::mouseControl(GLfloat xChange, GLfloat yChange) {
 }
 
 glm::mat4 Camera::calculateViewMatrix() {
-	return glm::lookAt(position, front + position, up);
+	return glm::lookAt(position, front + position, up);	// Returns a view matrix based on the camera's position, front, and world up vectors
 }
 
 Camera::~Camera() {

@@ -20,6 +20,7 @@ int GLWindow::Initialise() {
 		return 1;
 	}
 
+	// OpenGL version and compatability info
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);	// Major version 3 of OpenGL
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);	// Minor version 3 of OpenGL
 													// Final version 3.3 of OpenGL
@@ -73,12 +74,12 @@ void GLWindow::handleKeys(GLFWwindow* window, int key, int code, int action, int
 		glfwSetWindowShouldClose(window, GL_TRUE);			// The window should close
 	}
 
-	if (key >= 0 && key < 1024) {
-		if (action == GLFW_PRESS) {
+	if (key >= 0 && key < 1024) {	// Checks if the key code is valid
+		if (action == GLFW_PRESS) {	// Enables the key at the key code location
 			theWindow->keys[key] = true;
 		}
 
-		else if (action == GLFW_RELEASE) {
+		else if (action == GLFW_RELEASE) {	// Checks for key release
 			theWindow->keys[key] = false;
 		}
 	}

@@ -12,37 +12,37 @@ void Shader::CreateFromString(const char* vertexCode, const char* fragmentCode) 
 }
 
 void Shader::CreateFromFile(const char* vertexLocation, const char* fragmentLocation) {
-	std::string vertexString = ReadFile(vertexLocation);	// Coppies shader code from file to application
+	std::string vertexString = ReadFile(vertexLocation);	// Coppies vertex shader code from file to application
 	const char* vertexCode = vertexString.c_str();			// Converts string to char string
 
-	std::string fragmentString = ReadFile(fragmentLocation);	
-	const char* fragmentCode = fragmentString.c_str();
-
-	CompileShader(vertexCode, fragmentCode);
+	std::string fragmentString = ReadFile(fragmentLocation);	// Coppies fragment shader code from file to application
+	const char* fragmentCode = fragmentString.c_str();			// Converts string to char string
+	
+	CompileShader(vertexCode, fragmentCode);	// Compiles the shader using coppied shader code
 }
 
 std::string Shader::ReadFile(const char* fileLocation) {
-	std::string content;
-	std::ifstream fileStream(fileLocation, std::ios::in);
+	std::string content;									// Local string to contain the content of the file
+	std::ifstream fileStream(fileLocation, std::ios::in);	// (BufferedInputStream?) stream from the input file
 
-	if (!fileStream.is_open()) {
+	if (!fileStream.is_open()) {	// Checks if the file could be located
 		printf("Failed to read '%s', file does not exist or could not be found at the location", fileLocation);
 		return "";
 	}
 
-	std::string line = "";
-	while (!fileStream.eof()) {
+	std::string line = "";				// Temp variable to copy line information
+	while (!fileStream.eof()) {			// Loops while the file stream has not reached eof (end of file)
 		std::getline(fileStream, line);	// Coppies data line from file to the application
-		content.append(line + "\n");
+		content.append(line + "\n");	// Appends the line to the content string with a newline
 	}
 
-	fileStream.close();
-	return content;
+	fileStream.close();	// Close the fileStream after use
+	return content;		// Returns the content of the file
 
 }
 
 void Shader::UseShader() {
-	glUseProgram(shaderID);
+	glUseProgram(shaderID);	// Uses the shader program in the GPU
 }
 
 void Shader::ClearShader() {
@@ -67,25 +67,25 @@ void Shader::CompileShader(const char* vertexCode, const char* fragmentCode) {
 		return;
 	}
 
-	AddShader(shaderID, vertexCode, GL_VERTEX_SHADER);	// Assigns a vertex shader to the shader program
+	AddShader(shaderID, vertexCode, GL_VERTEX_SHADER);		// Assigns a vertex shader to the shader program
 	AddShader(shaderID, fragmentCode, GL_FRAGMENT_SHADER);	// Assigns a fragment shader to the shader program
 
 	GLint result = 0;
 	GLchar errorLog[1024] = { 0 };
 
-	glLinkProgram(shaderID);								// Links the shader program
+	glLinkProgram(shaderID);							// Links the shader program
 	glGetProgramiv(shaderID, GL_LINK_STATUS, &result);	// Gets the result of the linkage process
 
-	if (!result) {
+	if (!result) {	// Checks if the program linking process passed
 		glGetProgramInfoLog(shaderID, sizeof(errorLog), NULL, errorLog);
 		printf("Failed to Link Program: '%s'\n", errorLog);
 		return;
 	}
 
-	glValidateProgram(shaderID);								// Validates the shader program
+	glValidateProgram(shaderID);							// Validates the shader program
 	glGetProgramiv(shaderID, GL_VALIDATE_STATUS, &result);	// Gets the result of the validation process
 
-	if (!result) {
+	if (!result) {	// Checks if the program validation passed
 		glGetProgramInfoLog(shaderID, sizeof(errorLog), NULL, errorLog);
 		printf("Failed to Validate Program: '%s'\n", errorLog);
 		return;
@@ -119,7 +119,7 @@ void Shader::AddShader(GLuint shaderProgram, const char* shaderCode, GLenum shad
 
 	glGetShaderiv(theShader, GL_COMPILE_STATUS, &result);	// Gets the result of the Compilation process
 
-	if (!result) {
+	if (!result) {	// Checks if the shader linked to the shader program
 		glGetShaderInfoLog(theShader, sizeof(errorLog), NULL, errorLog);
 		printf("Failed to Link '%d' Shader: '%s'\n", shaderType, errorLog);
 		return;
