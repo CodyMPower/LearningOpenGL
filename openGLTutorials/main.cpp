@@ -17,6 +17,7 @@
 #include "GLWindow.h"
 #include "Camera.h"
 #include "Texture.h"
+#include "Light.h"
 
 std::vector<Mesh*> meshList;
 std::vector<Shader*> shaderList;
@@ -24,6 +25,8 @@ Camera camera;
 
 Texture brickTexture;
 Texture dirtTexture;
+
+Light mainLight;
 
 GLWindow mainWindow;
 
@@ -158,7 +161,7 @@ int main() {
 	// Create objects and store the mesh pointers in meshList
 	CreateObject();	// Creates a simple shape with 4 triangles
 	CreateShader();	// Compiles a shader program with vShader and fShader
-	CreatePlane(5, 5);
+	CreatePlane(10, 10);
 	//CreateObject();
 
 	camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 5.0f, 0.5f);	// Sets up camera properties
@@ -169,8 +172,11 @@ int main() {
 	dirtTexture = Texture((char*) "Textures/dirt.jpg");
 	dirtTexture.LoadTexture();
 
+				   // R   , G   , B   , Intensity
+	mainLight = Light(1.0f, 1.0f, 1.0f, 1.0f);
+
 	// Creates variables for uniform locations
-	GLuint uniformModel = 0, uniformProjection = 0, uniformView = 0;	// Uniform IDs for the vertex shader
+	GLuint uniformModel = 0, uniformProjection = 0, uniformView = 0, uniformAmbientIntensity = 0, uniformAmbientColour = 0;	// Uniform IDs for the vertex shader
 
 	// Creates a projection (perspective) matrix
 	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)(mainWindow.getBufferWidth()/mainWindow.getBufferHeight()), 0.1f, 100.0f); // Only really need to create it once, unless you're manipulating the projection every frame
@@ -217,10 +223,14 @@ int main() {
 		model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));	//Scales the matrix
 
 		// Stores the IDs of the uniform locations
-		uniformModel = shaderList[0]->GetModelLocation();
-		uniformProjection = shaderList[0]->GetProjectionLocation();
-		uniformView = shaderList[0]->GetViewLocation();
+		uniformModel				= shaderList[0]->GetModelLocation();
+		uniformProjection			= shaderList[0]->GetProjectionLocation();
+		uniformView					= shaderList[0]->GetViewLocation();
+		uniformAmbientIntensity		= shaderList[0]->GetAmbientIntensityLocation();
+		uniformAmbientColour		= shaderList[0]->GetAmbientColourLocation();
 		
+		mainLight.UseLight(uniformAmbientIntensity, uniformAmbientColour);
+
 		// Assigns the matrices to their respective uniform variables
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 			//uniformModel:				The matrix to pass though
@@ -229,6 +239,8 @@ int main() {
 			//glm::value_ptr(model):	A pointer to the model matrix
 		glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
 		glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
+		
+
 		brickTexture.UseTexture();	// Use texture you want before Rendering each mesh
 		meshList[0]->RenderMesh();	// Calls the render function of the mesh at the first index
 
