@@ -85,6 +85,10 @@ void Camera::mouseControl(GLfloat xChange, GLfloat yChange) {
 
 }
 
+glm::vec3 Camera::getCameraPosition() {
+	return position;
+}
+
 glm::mat4 Camera::calculateViewMatrix() {
 	return glm::lookAt(position, front + position, up);	// Returns a view matrix based on the camera's position, front, and world up vectors
 }

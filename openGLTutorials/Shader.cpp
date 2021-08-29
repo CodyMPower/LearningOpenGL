@@ -91,14 +91,16 @@ void Shader::CompileShader(const char* vertexCode, const char* fragmentCode) {
 		return;
 	}
 
-	uniformModel			= glGetUniformLocation(shaderID, "model");								// Gets the location of the uniform variable "model"
-	uniformProjection		= glGetUniformLocation(shaderID, "projection");							// Gets the location of the uniform variable "model"
-	uniformView				= glGetUniformLocation(shaderID, "view");								// Gets the location of the unifrom variable "view"
-	uniformAmbientIntensity = glGetUniformLocation(shaderID, "directionalLight.ambientIntensity");	// Gets the location of the uniform variable "ambientIntensity" inside the uniform struct "directionalLight"
-	uniformAmbientColour	= glGetUniformLocation(shaderID, "directionalLight.colour");			// Gets the location of the unifrom variable "colour" inside the uniform struct "directionalLight"
-	uniformDiffuseIntensity	= glGetUniformLocation(shaderID, "directionalLight.diffuseIntensity");	// Gets the location of the uniform variable "ambientIntensity" inside the uniform struct "directionalLight"
-	uniformDirection		= glGetUniformLocation(shaderID, "directionalLight.direction");			// Gets the location of the unifrom variable "colour" inside the uniform struct "directionalLight"
-
+	uniformModel				= glGetUniformLocation(shaderID, "model");								// Gets the location of the uniform variable "model"
+	uniformProjection			= glGetUniformLocation(shaderID, "projection");							// Gets the location of the uniform variable "model"
+	uniformView					= glGetUniformLocation(shaderID, "view");								// Gets the location of the unifrom variable "view"
+	uniformEyePosition			= glGetUniformLocation(shaderID, "eyePosition");						// Gets the location of the unifrom variable "eyePosition"
+	uniformAmbientIntensity		= glGetUniformLocation(shaderID, "directionalLight.ambientIntensity");	// Gets the location of the uniform variable "ambientIntensity" inside the uniform struct "directionalLight"
+	uniformAmbientColour		= glGetUniformLocation(shaderID, "directionalLight.colour");			// Gets the location of the unifrom variable "colour" inside the uniform struct "directionalLight"
+	uniformDiffuseIntensity		= glGetUniformLocation(shaderID, "directionalLight.diffuseIntensity");	// Gets the location of the uniform variable "diffuseIntensity" inside the uniform struct "directionalLight"
+	uniformDirection			= glGetUniformLocation(shaderID, "directionalLight.direction");			// Gets the location of the unifrom variable "direction" inside the uniform struct "directionalLight"
+	uniformSpecularIntensity	= glGetUniformLocation(shaderID, "material.specularIntensity");			// Gets the location of the uniform variable "specularIntensity" inside the uniform struct "material"
+	uniformShininess			= glGetUniformLocation(shaderID, "material.shininess");					// Gets the location of the unifrom variable "shininess" inside the uniform struct "material"
 }
 
 void Shader::AddShader(GLuint shaderProgram, const char* shaderCode, GLenum shaderType) {

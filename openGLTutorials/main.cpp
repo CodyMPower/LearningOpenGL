@@ -18,6 +18,7 @@
 #include "Camera.h"
 #include "Texture.h"
 #include "Light.h"
+#include "Material.h"
 
 std::vector<Mesh*> meshList;
 std::vector<Shader*> shaderList;
@@ -25,6 +26,9 @@ Camera camera;
 
 Texture brickTexture;
 Texture dirtTexture;
+
+Material shinyMaterial;
+Material dullMaterial;
 
 Light mainLight;
 
@@ -106,21 +110,21 @@ void calcAverageNormals(unsigned int* indices, unsigned int indCount, GLfloat *v
 
 void CreateObject() {
 	GLfloat vertices[] = {
-		-1.0f, -1.0f, 0.0f,	// Point 0
-		0.0f , 0.0f ,		// Tex Coord 0
-		0.0f, 0.0f, 0.0f,	// Temp Normal 0
+		-1.0f, -1.0f, -0.6f,	// Point 0
+		0.0f , 0.0f ,			// Tex Coord 0
+		0.0f, 0.0f, 0.0f,		// Temp Normal 0
 
-		0.0f , -1.0f, 1.0f,	// Point 1
-		0.5f , 0.0f ,		// Tex Coord 1
-		0.0f, 0.0f, 0.0f,	// Temp Normal 1
+		0.0f , -1.0f, 1.0f,		// Point 1
+		0.5f , 0.0f ,			// Tex Coord 1
+		0.0f, 0.0f, 0.0f,		// Temp Normal 1
 
-		1.0f , -1.0f, 0.0f,	// Point 2
-		1.0f , 0.0f ,		// Tex Coord 2
-		0.0f, 0.0f, 0.0f,	// Temp Normal 2
+		1.0f , -1.0f, -0.6f,		// Point 2
+		1.0f , 0.0f ,			// Tex Coord 2
+		0.0f, 0.0f, 0.0f,		// Temp Normal 2
 
-		0.0f , 1.0f , 0.0f,	// Point 3
-		0.5f , 1.0f,		// Tex Coord 3
-		0.0f, 0.0f, 0.0f,	// Temp Normal 3
+		0.0f , 1.0f , 0.0f,		// Point 3
+		0.5f , 1.0f,			// Tex Coord 3
+		0.0f, 0.0f, 0.0f,		// Temp Normal 3
 
 	};
 
@@ -211,7 +215,7 @@ void CreatePlane(int rows, int cols) {
 int main() {
 
 	// Creates a window and checks if the window was initalizes correctly
-	mainWindow = GLWindow(800, 600);
+	mainWindow = GLWindow(1366, 768);
 	if (mainWindow.Initialise() != 0) {
 		return 1;
 	}
@@ -230,14 +234,18 @@ int main() {
 	dirtTexture = Texture((char*) "Textures/dirt.jpg");
 	dirtTexture.LoadTexture();
 
+	shinyMaterial = Material(1.0f, 32);	// Full intensity, higher powers of 2 indicate more shininess
+	dullMaterial = Material(0.3f, 4);	// Low intensity, lower powers of 2 indicates less shininess
+
 				   // R   , G   , B   , ambient intensity
 	mainLight = Light(1.0f, 1.0f, 1.0f, 1.0f, 
 		//x, y	  , z	 , diffuse intensity
-		2.0, -1.0f, -2.0f, 1.0f);
+		2.0, -1.0f, -2.0f, 0.3f);
 
 	// Creates variables for uniform locations
-	GLuint uniformModel = 0, uniformProjection = 0, uniformView = 0,
-		uniformAmbientIntensity = 0, uniformAmbientColour = 0, uniformDiffuseIntensity = 0, uniformDirection = 0;	// Uniform IDs for the vertex shader
+	GLuint uniformModel = 0, uniformProjection = 0, uniformView = 0, uniformEyePosition = 0,
+		uniformAmbientIntensity = 0, uniformAmbientColour = 0, uniformDiffuseIntensity = 0, uniformDirection = 0,
+		uniformSpecularIntensity = 0, uniformShininess = 0;	// Uniform IDs for the vertex shader
 
 	// Creates a projection (perspective) matrix
 	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)(mainWindow.getBufferWidth()/mainWindow.getBufferHeight()), 0.1f, 100.0f); // Only really need to create it once, unless you're manipulating the projection every frame
@@ -276,24 +284,31 @@ int main() {
 
 		// Creates a model matrix
 		glm::mat4 model(1.0f);												// Creates an identity matrix
-		model = glm::translate(model, glm::vec3(0.0f, 0.5f, -2.5f));	// Applies a translation to the model matrix
+		model = glm::translate(model, glm::vec3(0.0f, 4.0f, -2.5f));	// Applies a translation to the model matrix
 		//model = glm::rotate(model, curAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
 		//model:				The matrix to opperate on
 		//curAngle * toRadians:	The angle, in radians, to rotate the matrix by
 		//glm::vec3():			The rotation axis of the matrix (z axis)
-		model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));	//Scales the matrix
+		//model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));	//Scales the matrix
 
 		// Stores the IDs of the uniform locations
 		uniformModel				= shaderList[0]->GetModelLocation();
 		uniformProjection			= shaderList[0]->GetProjectionLocation();
 		uniformView					= shaderList[0]->GetViewLocation();
+		uniformEyePosition			= shaderList[0]->GetEyePositionLocation();
 		uniformAmbientIntensity		= shaderList[0]->GetAmbientIntensityLocation();
 		uniformAmbientColour		= shaderList[0]->GetAmbientColourLocation();
 		uniformDiffuseIntensity		= shaderList[0]->GetDiffuseIntensityLocation();
 		uniformDirection			= shaderList[0]->GetDirectionLocation();
+		uniformSpecularIntensity	= shaderList[0]->GetSpecularIntensityLocation();
+		uniformShininess			= shaderList[0]->GetShininessLocation();
 
 		mainLight.UseLight(uniformAmbientIntensity, uniformAmbientColour,
 							uniformDiffuseIntensity, uniformDirection);
+
+		glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
+		glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
+		glUniform3f(uniformEyePosition, camera.getCameraPosition().x, camera.getCameraPosition().y, camera.getCameraPosition().z);
 
 		// Assigns the matrices to their respective uniform variables
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
@@ -301,26 +316,26 @@ int main() {
 			//1:						How many matrices are being passed (only 1, uniformModel)
 			//GL_FALSE:					Should the matrix be transposed (flipped) (false)
 			//glm::value_ptr(model):	A pointer to the model matrix
-		glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
-		glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
-		
 
 		brickTexture.UseTexture();	// Use texture you want before Rendering each mesh
+		dullMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 		meshList[0]->RenderMesh();	// Calls the render function of the mesh at the first index
 
 		model = glm::mat4(1.0f);												// Creates an identity matrix
-		model = glm::translate(model, glm::vec3(0.0f, -0.5f, -2.5f));	// Applies a translation to the model matrix
+		model = glm::translate(model, glm::vec3(0.0f, 0.0f, -2.5f));	// Applies a translation to the model matrix
 		//model = glm::rotate(model, -curAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
 		//model:				The matrix to opperate on
 		//curAngle * toRadians:	The angle, in radians, to rotate the matrix by
 		//glm::vec3():			The rotation axis of the matrix (z axis)
-		model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));	//Scales the matrix
+		//model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));	//Scales the matrix
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 
 		dirtTexture.UseTexture();	// Use texture you want before Rendering each mesh
+		shinyMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 		meshList[0]->RenderMesh();	// Calls the render function of the mesh at the first index
 
 		model = glm::mat4(1.0f);
+		model = glm::rotate(model, -curAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 
 		meshList[1]->RenderMesh();
