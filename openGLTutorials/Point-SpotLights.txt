@@ -1,0 +1,32 @@
+Point Lights:
+	Has a position
+	Emits light in all directions
+
+	Attenuation:
+		Distance affect intensity of the light
+		Linear drop off could be used, but is not very realistic
+		Light drops in the following way:
+		1/(ax^2 + bx + c) where x is the distance from the light source
+
+		attenuationFactor = 1.0f/(a*dist^2 + b*dist + c)
+
+		Apply attenuation to ambient, diffuse, and specular
+		when denominator is less than 1, you can cap the maximum attenuation to a certain value
+
+Spot lights:
+	Work along the same lines as Point lights
+	Have direction and cut-off angle as well
+
+	angleToFragment = lightVec * lightDir
+	lightVector: vector from the light to the fragment
+	lightDirection: the direction of the spot light
+	if angleToFragment > cos(cutoffAngle), than the fragment is not iluminated, otherwise, the fragment is iluminated
+	gives hard edges, good enough for retro games, not for "realistic" games
+
+	if angle is near cut off angle, give some light
+
+	newVal = (newMax - newMin)(originalVal - originalMin)/(originalMax - originalMin)
+	-> (rangle from 0 to 1)
+	spotLightFade = 1 - (1- angleToFrag)/(1- cutoffAngle)
+
+	colour = spotlightColour * spotlightFade
