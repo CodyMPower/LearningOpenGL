@@ -12,12 +12,15 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
+#include "CommonVals.h"
+
 #include "Mesh.h"
 #include "Shader.h"
 #include "GLWindow.h"
 #include "Camera.h"
 #include "Texture.h"
-#include "Light.h"
+#include "DirectionalLight.h"
+#include "PointLight.h"
 #include "Material.h"
 
 std::vector<Mesh*> meshList;
@@ -30,7 +33,8 @@ Texture dirtTexture;
 Material shinyMaterial;
 Material dullMaterial;
 
-Light mainLight;
+DirectionalLight mainLight;
+PointLight pointLights[MAX_POINT_LIGHTS];
 
 GLWindow mainWindow;
 
@@ -135,11 +139,28 @@ void CreateObject() {
 		0, 1, 2		// 
 	};
 	
+	unsigned int floorIndices[] = {
+		0, 2, 1,
+		1, 2, 3
+	};
+
+	GLfloat floorVertices[]{
+		-10.0f, 0.0f, -10.0f,	0.0f, 0.0f,		0.0f, -1.0f, 0.0f,
+		10.0f , 0.0f, -10.0f,	1.0f, 0.0f,		0.0f, -1.0f, 0.0f,
+		-10.0f, 0.0f,  10.0f,	0.0f, 1.0f,		0.0f, -1.0f, 0.0f,
+		10.0f , 0.0f,  10.0f,	1.0f, 1.0f,		0.0f, -1.0f, 0.0f
+	};
+
 	calcAverageNormals(indices, 12, vertices, 32, 8, 5);
 
 	Mesh* obj1 = new Mesh();
 	obj1->CreateMesh(vertices, indices, 32, 12);
-	meshList.push_back(obj1);	// Adds a new element to the end of the vector
+	meshList.push_back(obj1);	// Adds a new element to the end of the vectorMesh* obj1 = new Mesh();
+
+	Mesh* obj2 = new Mesh();
+	obj2->CreateMesh(floorVertices, floorIndices, 32, 6);
+	meshList.push_back(obj2);	// Adds a new element to the end of the vector
+
 
 }
 
@@ -174,11 +195,15 @@ void CreatePlane(int rows, int cols) {
 	for (int X = 0; X < rows; X++) {
 
 		for (int P = 0; P < cols; P++) {
-			vertices[((X * cols) + P) * vertInfoSize]	   = (GLfloat) (P - xOff);	// X coord
-			vertices[((X * cols) + P) * vertInfoSize + 1] = (GLfloat) (X - yOff);	// Y coord
-			vertices[((X * cols) + P) * vertInfoSize + 2] = (GLfloat) (0.0f);		// Z coord, placed at origin
-			vertices[((X * cols) + P) * vertInfoSize + 3] = (GLfloat) (P);			// S tex coord
-			vertices[((X * cols) + P) * vertInfoSize + 4] = (GLfloat) (X);			// T tex coord
+			int offset = ((X * cols) + P) * vertInfoSize;
+			vertices[offset + 0] = (GLfloat) (P - xOff);	// X coord
+			vertices[offset + 1] = (GLfloat) (0.0f);	// Y coord
+			vertices[offset + 2] = (GLfloat) (X - yOff);		// Z coord, placed at origin
+			vertices[offset + 3] = (GLfloat) (P);			// S tex coord
+			vertices[offset + 4] = (GLfloat) (X);			// T tex coord
+			vertices[offset + 5] = (GLfloat) 0.0f;
+			vertices[offset + 6] = (GLfloat) -1.0f;
+			vertices[offset + 7] = (GLfloat) 0.0f;
 		}
 
 	}
@@ -189,11 +214,11 @@ void CreatePlane(int rows, int cols) {
 		for (int P = 0; P < cols - 1; P++) {											// One Square example:
 			int newSquare[6];							// Temp array for storing data
 			newSquare[0] = (X * cols) + P;				// Bottom left corner of triangle 1		(0)
-			newSquare[1] = (X * cols) + (P + 1);		// Bottom right corner of triangle 1	(1)
-			newSquare[2] = ((X + 1) * cols) + P;		// Top corner of triangle 1				(2)
+			newSquare[1] = ((X + 1) * cols) + P;		// Bottom right corner of triangle 1	(1)
+			newSquare[2] = (X * cols) + (P + 1);		// Top corner of triangle 1				(2)
 			newSquare[3] = (X * cols) + (P + 1);		// Bottom corner of triangle 2			(1)
-			newSquare[4] = ((X + 1) * cols) + (P + 1);	// Top right corner of triangle 2		(3)
-			newSquare[5] = ((X + 1) * cols) + P;		// Top left corner of triangle 2		(2)
+			newSquare[4] = ((X + 1) * cols) + P;	// Top right corner of triangle 2		(3)
+			newSquare[5] = ((X + 1) * cols) + (P + 1);		// Top left corner of triangle 2		(2)
 
 			for (int i = 0; i < 6; i++) {
 				indices[((X * (cols - 1)) + P) * 6 + i] = newSquare[i];	// Transfers the data to the indices array
@@ -203,7 +228,7 @@ void CreatePlane(int rows, int cols) {
 
 	}
 
-	calcAverageNormals(indices, indSize, vertices, vertSize, vertInfoSize, 5);
+	//calcAverageNormals(indices, indSize, vertices, vertSize, vertInfoSize, 5);
 
 	// Create a mesh and store the mesh pointer to the mesh list
 	Mesh* obj1 = new Mesh();
@@ -234,21 +259,37 @@ int main() {
 	dirtTexture = Texture((char*) "Textures/dirt.jpg");
 	dirtTexture.LoadTexture();
 
-	shinyMaterial = Material(1.0f, 32);	// Full intensity, higher powers of 2 indicate more shininess
+	shinyMaterial = Material(4.0f, 256);	// Full intensity, higher powers of 2 indicate more shininess
 	dullMaterial = Material(0.3f, 4);	// Low intensity, lower powers of 2 indicates less shininess
 
-				   // R   , G   , B   , ambient intensity
-	mainLight = Light(1.0f, 1.0f, 1.0f, 1.0f, 
-		//x, y	  , z	 , diffuse intensity
-		2.0, -1.0f, -2.0f, 0.3f);
+							  // R   , G   , B
+	mainLight = DirectionalLight(1.0f, 1.0f, 1.0f, 
+								//amb, dif
+								0.1f, 0.3f,
+								//x, y	  , z
+								0.0, 0.0f, -1.0f);
+
+	unsigned int pointLightCount = 0;
+	pointLights[0] = PointLight(1.0f, 0.0f, 0.0f,
+								0.1f, 0.4f,
+								-4.0f, 0.0f, 0.0f,
+								0.3f, 0.2f, 0.1f);
+
+	pointLightCount++;
+
+	pointLights[1] = PointLight(0.0f, 0.0f, 1.0f,
+								0.1f, 0.1f,
+								4.0f, 0.0f, 0.0f,
+								0.3f, 0.1f, 0.1f);
+
+	pointLightCount++;
 
 	// Creates variables for uniform locations
 	GLuint uniformModel = 0, uniformProjection = 0, uniformView = 0, uniformEyePosition = 0,
-		uniformAmbientIntensity = 0, uniformAmbientColour = 0, uniformDiffuseIntensity = 0, uniformDirection = 0,
 		uniformSpecularIntensity = 0, uniformShininess = 0;	// Uniform IDs for the vertex shader
 
 	// Creates a projection (perspective) matrix
-	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)(mainWindow.getBufferWidth()/mainWindow.getBufferHeight()), 0.1f, 100.0f); // Only really need to create it once, unless you're manipulating the projection every frame
+	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)mainWindow.getBufferWidth()/mainWindow.getBufferHeight(), 0.1f, 100.0f); // Only really need to create it once, unless you're manipulating the projection every frame
 
 	while (!mainWindow.getShouldClose()) {
 
@@ -296,15 +337,11 @@ int main() {
 		uniformProjection			= shaderList[0]->GetProjectionLocation();
 		uniformView					= shaderList[0]->GetViewLocation();
 		uniformEyePosition			= shaderList[0]->GetEyePositionLocation();
-		uniformAmbientIntensity		= shaderList[0]->GetAmbientIntensityLocation();
-		uniformAmbientColour		= shaderList[0]->GetAmbientColourLocation();
-		uniformDiffuseIntensity		= shaderList[0]->GetDiffuseIntensityLocation();
-		uniformDirection			= shaderList[0]->GetDirectionLocation();
 		uniformSpecularIntensity	= shaderList[0]->GetSpecularIntensityLocation();
 		uniformShininess			= shaderList[0]->GetShininessLocation();
 
-		mainLight.UseLight(uniformAmbientIntensity, uniformAmbientColour,
-							uniformDiffuseIntensity, uniformDirection);
+		shaderList[0]->SetDirectionalLight(&mainLight);
+		shaderList[0]->SetPointLights(pointLights, pointLightCount);
 
 		glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projection));
 		glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(camera.calculateViewMatrix()));
@@ -335,10 +372,13 @@ int main() {
 		meshList[0]->RenderMesh();	// Calls the render function of the mesh at the first index
 
 		model = glm::mat4(1.0f);
-		model = glm::rotate(model, -curAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
+		model = glm::translate(model, glm::vec3(0.0f, -2.0f, 0.0f));
+		//model = glm::rotate(model, -curAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
 		glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 
-		meshList[1]->RenderMesh();
+		meshList[2]->RenderMesh();
+
+
 
 		glUseProgram(0);							// Unbinds the shader program
 

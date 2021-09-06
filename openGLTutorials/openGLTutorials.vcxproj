@@ -20,27 +20,33 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="DirectionalLight.cpp" />
     <ClCompile Include="GLWindow.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="PointLight.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="Texture.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="Camera.txt" />
     <Text Include="Interp_Index_Project.txt" />
+    <Text Include="Point-SpotLights.txt" />
     <Text Include="RenderPipeline.txt" />
     <Text Include="Texture-ImageLoad.txt" />
     <Text Include="VecMatUni.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Camera.h" />
+    <ClInclude Include="CommonVals.h" />
+    <ClInclude Include="DirectionalLight.h" />
     <ClInclude Include="GLWindow.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="PointLight.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="Texture.h" />
   </ItemGroup>
