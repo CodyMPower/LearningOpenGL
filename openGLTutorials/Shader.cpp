@@ -80,6 +80,21 @@ void Shader::SetSpotLights(SpotLight* sLight, unsigned int lightCount) {
 
 }
 
+void Shader::SetTexture(GLuint textureUint)
+{
+	glUniform1i(uniformTexture, textureUint);
+}
+
+void Shader::SetDirectionalShadowMap(GLuint textureUnit)
+{
+	glUniform1i(uniformDirectionalShadowMap, textureUnit);
+}
+
+void Shader::SetDirectionalLightTransform(glm::mat4* lightTransform)
+{
+	glUniformMatrix4fv(uniformDirectionalLightTransform, 1, GL_FALSE, glm::value_ptr(*lightTransform));
+}
+
 void Shader::UseShader() {
 	glUseProgram(shaderID);	// Uses the shader program in the GPU
 }
@@ -190,6 +205,10 @@ void Shader::CompileShader(const char* vertexCode, const char* fragmentCode) {
 		uniformSpotLight[i].uniformEdge = glGetUniformLocation(shaderID, locBuff);
 
 	}
+
+	uniformTexture = glGetUniformLocation(shaderID, "theTexture");
+	uniformDirectionalLightTransform = glGetUniformLocation(shaderID, "directionalLightTransform");
+	uniformDirectionalShadowMap = glGetUniformLocation(shaderID, "directionalShadowMap");
 
 }
 

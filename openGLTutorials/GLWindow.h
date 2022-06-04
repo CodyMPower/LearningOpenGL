@@ -22,6 +22,8 @@ public:
 	bool getShouldClose() { return glfwWindowShouldClose(mainWindow); }	// Gets if the window inside this class should close
 	bool* getKeys() { return keys; };									// Retuns a pointer to keys, not very OOP
 
+	void setViewport(GLint x_val, GLint y_val, GLsizei width, GLsizei height) { glViewport(x_val, y_val, width, height); }
+
 	void swapBuffers() { glfwSwapBuffers(mainWindow);  }	// Swaps the buffers of the window inside this class
 
 	~GLWindow();
