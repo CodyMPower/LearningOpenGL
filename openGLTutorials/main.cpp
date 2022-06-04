@@ -246,7 +246,7 @@ void CreatePlane(int rows, int cols) {
 
 void renderScene() {
 
-	RenderedObject topTriangle(meshList[0], &faceTexture, &dullMaterial);
+	RenderedObject topTriangle(meshList[0], &brickTexture, &dullMaterial);
 	topTriangle.setTransformMatrix(glm::vec3(0.0f, 4.0f, -2.5f), glm::vec3(0.0f, 1.0f, 0.0f),
 		curAngle * toRadians, glm::vec3(1.0f, 1.0f, 1.0f));
 	topTriangle.renderObject(uniformModel, uniformSpecularIntensity, uniformShininess);
@@ -268,7 +268,7 @@ void renderScene() {
 	//GL_FALSE:					Should the matrix be transposed (flipped) (false)
 	//glm::value_ptr(model):	A pointer to the model matrix
 
-	faceTexture.UseTexture();	// Use texture you want before Rendering each mesh
+	brickTexture.UseTexture();	// Use texture you want before Rendering each mesh
 	dullMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 	//meshList[0]->RenderMesh();	// Calls the render function of the mesh at the first index
 
@@ -281,7 +281,7 @@ void renderScene() {
 	//model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));	//Scales the matrix
 	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
 
-	faceTexture.UseTexture();	// Use texture you want before Rendering each mesh
+	dirtTexture.UseTexture();	// Use texture you want before Rendering each mesh
 	shinyMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
 	meshList[0]->RenderMesh();	// Calls the render function of the mesh at the first index
 
@@ -352,6 +352,46 @@ void renderPass(glm::mat4 projectionMatrix, glm::mat4 viewMatrix) {
 	
 }
 
+void renderPass(glm::mat4 projectionMatrix, glm::mat4 viewMatrix) {
+	// Uses the first shader in the shader list
+	shaderList[0]->UseShader();
+
+	// Stores the IDs of the uniform locations
+	uniformModel = shaderList[0]->GetModelLocation();
+	uniformProjection = shaderList[0]->GetProjectionLocation();
+	uniformView = shaderList[0]->GetViewLocation();
+	uniformEyePosition = shaderList[0]->GetEyePositionLocation();
+	uniformSpecularIntensity = shaderList[0]->GetSpecularIntensityLocation();
+	uniformShininess = shaderList[0]->GetShininessLocation();
+
+	mainWindow.setViewport(0, 0, 1366, 768);
+
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);				// Sets the clear color to black
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clears the screen color and depth, color cleared to specified clear color
+
+	glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
+	glUniformMatrix4fv(uniformView, 1, GL_FALSE, glm::value_ptr(viewMatrix));
+	glUniform3f(uniformEyePosition, camera.getCameraPosition().x, camera.getCameraPosition().y, camera.getCameraPosition().z);
+
+	shaderList[0]->SetDirectionalLight(&mainLight);
+	shaderList[0]->SetPointLights(pointLights, pointLightCount);
+	shaderList[0]->SetSpotLights(spotLights, spotLightCount);
+
+	glm::mat4 lightTransform = mainLight.CalculateLightTransform();
+	shaderList[0]->SetDirectionalLightTransform(&lightTransform);
+
+	mainLight.GetShadowMap()->Read(GL_TEXTURE1);	// GL_TEXTURE0 is already being used for the texture of any given object
+	shaderList[0]->SetTexture(0);					// Using Texture unit 0 for textures
+	shaderList[0]->SetDirectionalShadowMap(1);		// Using Texture unit 1 for shadow maps
+
+	glm::vec3 lowerLight = camera.getCameraPosition();
+	lowerLight.y = -0.3f;
+	spotLights[0].SetFlash(camera.getCameraPosition(), camera.getCameraDirection());
+
+	renderScene();
+	
+}
+
 int main() {
 
 	// Creates a window and checks if the window was initalizes correctly
@@ -373,8 +413,6 @@ int main() {
 	brickTexture.LoadTextureA();
 	dirtTexture = Texture((char*) "Textures/dirt.jpg");
 	dirtTexture.LoadTextureA();
-	faceTexture = Texture((char*)"Textures/Face.jpg");
-	faceTexture.LoadTextureA();
 
 	shinyMaterial = Material(4.0f, 256);	// Full intensity, higher powers of 2 indicate more shininess
 	dullMaterial = Material(0.3f, 4);	// Low intensity, lower powers of 2 indicates less shininess
