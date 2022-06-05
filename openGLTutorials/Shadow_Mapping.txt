@@ -1,0 +1,110 @@
+Shadow Mapping
+
+Create a "map" of the shadows made by a light.
+Use this map to determine where not to apply light.
+The map is held as a 2D texture (sampler2D in shader).
+Map is created using a "Framebuffer".
+Framebuffer writes to a texture.
+Therefore: At least 2 rendering passes are needed!
+One for creating a shadow map, second for drawing scene.
+
+For first pass: Render the scene from perspective of a light source.
+
+Creating the map:
+	Shaders don't just create color output!
+	Recall from Rendering Pipeline: Per-sample Operations.
+	Depth Tests using Depth Buffer values.
+	Depth Buffer is another buffer along with Color Buffer that holds a value that determines how deep into the frustum a fragment is
+		0 is on the Near Plane (closest to camera)
+		1 is on the Far Plane (furthest from camera)
+
+How to extract depth buffer data?
+FramebufferObject!
+Normally, Framebuffer bound is 0.
+This is the defauld buffer (the one drawn to the screen when the buffer swap is called).
+We can find a separate Framebuffer and draw to that...
+Then use the data as we wish!
+
+glGenFramebuffers(1, &FBO);
+Create a texture the usual way, but ...
+glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, width, height, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+GL_DEPTH_COMPONENT: Single float value, unlike RGB which has 3.
+Data is NULL, so we have created an empty texture with dimensions width x height.
+Set Framebuffer to write to texture with:
+glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTATCHMENT, GL_TEXTURE_2D, textureID, 0);
+GL_DEPTH_ATTATCHMENT: Tells Framebuffer to only write Depth Buffer data.
+glDrawBuffer(GL_NONE);
+glReadBuffer(GL_NONE);
+These override color data draw/read operations. We don't want to output color with our shadow map!
+
+Shader itself is simple:
+	1. Apply Projection and View matrices as if light source is the camera.
+	2. Apply model matrix of each object.
+	3. Fragment Shader isn't even needed: Depth buffer is written automatically.
+
+Directional Light shadow maps works differently to Point/Spot Light shadow maps!
+View Matrix position should consist of reverse of Directional Light's direction (simulating light in that direction).
+View Matrix direction is simply the direction of the light.
+Projection matirx is different: Frustrum of perspective Projection fans out! Directional Light rays are all parallel, they must not fan out.
+SOlution: Orthographic projection matrix.
+glm::ortho(-20.0f, 20.0f, -20.0f, 20.0f, 0.01f, 100.0f);
+
+After rendering the scene with the shadow map shader, the texture bound to it is occupied with shadow map data.
+Make sure to unbind the framebuffer used for the shadow map!
+Now we need to bind the texture to our main shader and use it.
+
+Need access to the view matrix used in the shadow map shader (the one using the light's perspective).
+Use this to get the current fragment position in relation to the light source.
+Need to create a way to access points on the shadow map with the light source perspective's fragment co-cordinates ...
+Therefore, need to convert light source perspective fragment's co-ordinates to "Normalized device co-ordinates" (values between -1 and 1).
+
+Need to perform a "perspective divide"
+Similar to how co-ordinates are created when moving to the fragment shader anyway ...
+However this is only applied to gl_Position.
+We need to do it manually for the positon relative to the light source.
+Easy calculation: divide the vector by it's 'w' component. This is why we use a vec4!
+vec3 projCoords = LightSpacePos.xyz / LightSpacePos.w;
+Then we need to scale the projCoords to 0,1, to match the 0, 1 values of a texture (recall textures use u- and v-axis between 0 and 1).
+projCoords = (projCoords * 0.5) + 0.5;
+
+Now use texture function to get closest depth measured during Shadow Map pass.
+float closest = texture(shadowMap, projCoords.xy).r;
+Grab z value from projCoords.
+z-axis on normalised co-ordinates is between 0 and 1, just like depth, and so can be treated as such.
+Compare current and closest depth ...
+If current larger than closest: it is further away than the first point the light hits at that fragment! So it must be in shadow.
+Otherwise: it is the same point, so it must be lit by the light.
+To apply shadow, simply add or remove diffuse and specular (retain ambient, remember: Ambient Light is always present).
+color = fragColor * (ambient + (1.0 - shadow) * (diffuse + specular));
+
+Shadow Acne occurs due to resolution issues
+Imagine lighting a surface at an angle ...
+When rendering from a less slanted angle, 2 pixels may converge to one texel on the shadow map!
+One point could be mistaken as being behind a point next to it.
+
+Solution: Add a slight bias.
+Effectively moving everything slightly towards the camerato fake a closer depth.
+Try to keep the bias small, or ...
+"Peter Panning" occurs. Bias offset causes areas close to shadow source to disappear because depth values are close.
+
+What about areas outside of teh Projection frustum used to create the shadow map?
+Values will be outside 0,1 range and therefore always create shadows!
+Solution:
+	Set texture type to use border with vaules all consisting of 0 (always lowest depth value so always lit).
+	For values beyond far plane and therefore greater than 1: initialise to 0.
+
+Edges of shadows are limited to resolution of texture shadow map is written to.
+This causes unsightly pixelated edges.
+Solution: Sample surrounding texels and calculate average. Apply only partial shadows for shadowed areas.
+Also known as: Percentage-Closer Filtering (PCF).
+Can get dangerously intensive if not used correctly.
+
+Get depth values of surrounding texels.
+Determine if in shadow.
+if yes: increment shadow value.
+When done, divide by number of samples taken.
+Apply percentage of shadow using this vaule.
+E.g. Shadow value calulated as 3, and 9 samples leaves 3.9 or 0.333... so apply 33% shadow to the pixel
+More samples: better fade but ...
+keep in mind this set of samples will be taken for EVERY fragmens, so instead of being one calculations, it becomes 9 just for using surrounding texels
+
