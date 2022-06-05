@@ -10,7 +10,9 @@ public:
 	Texture();				// Default constructor
 	Texture(char* fileLoc);	// Constructor with file location
 
-	void LoadTexture();		// Loads texture into GPU
+	bool LoadTexture();		// Loads texture into GPU
+	bool LoadTextureA();	// Loads a texture with an alpha chanel
+
 	void UseTexture();		// Uses the texture in one of the texture units
 	void ClearTexture();	// Deletes the texture from the GPU
 
