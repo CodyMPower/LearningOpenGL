@@ -13,6 +13,10 @@
 #include "PointLight.h"
 #include "SpotLight.h"
 
+#include "CommonVals.h"
+#include "DirectionalLight.h"
+#include "PointLight.h"
+
 class Shader
 {
 public:
