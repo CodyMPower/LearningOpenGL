@@ -24,9 +24,12 @@
 #include "SpotLight.h"
 #include "Material.h"
 #include "RenderedObject.h"
+#include "PlayerObject.h"
 
 std::vector<Mesh*> meshList;
 std::vector<Shader*> shaderList;
+std::vector<RenderedObject*> objectVector;
+PlayerObject* player;
 Shader directionalShadowShader;
 Camera camera;
 
@@ -168,6 +171,30 @@ void CreateObjects()
 	meshList.push_back(obj3);
 }
 
+void CreateScene() {
+	//RenderedObject* topTriangle = new RenderedObject(meshList[0], &faceTexture, &dullMaterial);				// Sets the mesh, texture, and material of the object
+	//topTriangle->setTransformMatrix(glm::vec3(0.0f, 4.0f, -2.5f), glm::vec3(0.0f, 1.0f, 0.0f),
+	//	curAngle * toRadians, glm::vec3(1.0f, 1.0f, 1.0f));								// Sets position, rotation, and size of the object
+	//objectVector.push_back(topTriangle);
+
+	//RenderedObject* bottomTriangle = new RenderedObject(meshList[1], &faceTexture, &shinyMaterial);
+	//bottomTriangle->setTransformMatrix(glm::vec3(2.0f, 1.0f, -2.0f), glm::vec3(0.0f, 1.0f, 0.0f),
+	//	0.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+	//objectVector.push_back(bottomTriangle);
+
+	RenderedObject* groundPlane = new RenderedObject(meshList[2], &dirtTexture, &shinyMaterial);
+	groundPlane->setTransformMatrix(glm::vec3(0.0f, -2.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f),
+		0.0f, glm::vec3(2.0, 1.0, 2.0));
+	objectVector.push_back(groundPlane);
+
+	RenderedObject* playerTriangle = new RenderedObject(meshList[0], &brickTexture, &dullMaterial);
+	playerTriangle->setTransformMatrix(glm::vec3(2.0f, -1.0f, -2.0f), glm::vec3(0.0f, 1.0f, 0.0f),
+		0.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+	player = new PlayerObject(glm::vec3(2.0f, -1.0f, -2.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f),
+		playerTriangle);
+	objectVector.push_back(playerTriangle);
+}
+
 void CreateShader() {
 	Shader* shader1 = new Shader();
 	shader1->CreateFromFile(vShader, fShader);
@@ -244,72 +271,35 @@ void CreatePlane(int rows, int cols) {
 
 }
 
+
+
 void renderScene() {
 
-	RenderedObject topTriangle(meshList[0], &brickTexture, &dullMaterial);
-	topTriangle.setTransformMatrix(glm::vec3(0.0f, 4.0f, -2.5f), glm::vec3(0.0f, 1.0f, 0.0f),
-		curAngle * toRadians, glm::vec3(1.0f, 1.0f, 1.0f));
-	topTriangle.renderObject(uniformModel, uniformSpecularIntensity, uniformShininess);
-	
-	// Creates a model matrix
-	glm::mat4 model(1.0f);											// Creates an identity matrix
-	//model = topTriangle.getTransformMatrix();
-	//model = glm::translate(model, glm::vec3(0.0f, 4.0f, -2.5f));	// Applies a translation to the model matrix
-	//model = glm::rotate(model, curAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
-	//model:				The matrix to opperate on
-	//curAngle * toRadians:	The angle, in radians, to rotate the matrix by
-	//glm::vec3():			The rotation axis of the matrix (z axis)
-	model = glm::scale(model, glm::vec3(1.0f, 1.0f, 1.0f));	//Scales the matrix
+	for (int i = 0; i < objectVector.size(); i++) {
+		objectVector[i]->renderObject(uniformModel, uniformSpecularIntensity, uniformShininess);	// Render the object with the specified materials to the shader
+	}
 
-	// Assigns the matrices to their respective uniform variables
-	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-	//uniformModel:				The matrix to pass though
-	//1:						How many matrices are being passed (only 1, uniformModel)
-	//GL_FALSE:					Should the matrix be transposed (flipped) (false)
-	//glm::value_ptr(model):	A pointer to the model matrix
+	//RenderedObject* renderedObject = player->getPlayerObject();
+	//renderedObject->renderObject(uniformModel, uniformSpecularIntensity, uniformShininess);
 
-	brickTexture.UseTexture();	// Use texture you want before Rendering each mesh
-	dullMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
-	//meshList[0]->RenderMesh();	// Calls the render function of the mesh at the first index
-
-	model = glm::mat4(1.0f);												// Creates an identity matrix
-	model = glm::translate(model, glm::vec3(0.0f, 0.0f, -2.5f));	// Applies a translation to the model matrix
-	//model = glm::rotate(model, -curAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
-	//model:				The matrix to opperate on
-	//curAngle * toRadians:	The angle, in radians, to rotate the matrix by
-	//glm::vec3():			The rotation axis of the matrix (z axis)
-	//model = glm::scale(model, glm::vec3(0.4f, 0.4f, 1.0f));	//Scales the matrix
-	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-
-	dirtTexture.UseTexture();	// Use texture you want before Rendering each mesh
-	shinyMaterial.UseMaterial(uniformSpecularIntensity, uniformShininess);
-	meshList[0]->RenderMesh();	// Calls the render function of the mesh at the first index
-
-	model = glm::mat4(1.0f);
-	model = glm::translate(model, glm::vec3(0.0f, -2.0f, 0.0f));
-	model = glm::scale(model, glm::vec3(2.0, 1.0, 2.0));
-	//model = glm::rotate(model, -curAngle * toRadians, glm::vec3(0.0f, 1.0f, 0.0f));
-	glUniformMatrix4fv(uniformModel, 1, GL_FALSE, glm::value_ptr(model));
-
-	meshList[2]->RenderMesh();
 }
 
 void DirectionalShadowMapPass(DirectionalLight* light) {
 	
-	directionalShadowShader.UseShader();
+	directionalShadowShader.UseShader();	// Set up the shadow shader to be the next shader used
 
-	glViewport(0, 0, light->GetShadowMap()->GetShadowWidth(), light->GetShadowMap()->GetShadowHeight());
+	glViewport(0, 0, light->GetShadowMap()->GetShadowWidth(), light->GetShadowMap()->GetShadowHeight());	// Gets the dimentions of the light source
 
-	light->GetShadowMap()->Write();
-	glClear(GL_DEPTH_BUFFER_BIT);
+	light->GetShadowMap()->Write();		// Sets up light source shadow map to be written to by shader
+	glClear(GL_DEPTH_BUFFER_BIT);	// Clears the depth buffer for the new shadow map
 
-	uniformModel = directionalShadowShader.GetModelLocation();
-	glm::mat4 lightTransform = light->CalculateLightTransform();
-	directionalShadowShader.SetDirectionalLightTransform(&lightTransform);
+	uniformModel = directionalShadowShader.GetModelLocation();				// Sets the uniformModel location to the shadow shader
+	glm::mat4 lightTransform = light->CalculateLightTransform();			// Calculates the transform matrix from the light
+	directionalShadowShader.SetDirectionalLightTransform(&lightTransform);	// Links the light transform matrix to the shadow shader
 
-	renderScene();
+	renderScene();	// Render the current sceen with the current objects
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);	// Unbinds the frame buffer
 }
 
 void renderPass(glm::mat4 projectionMatrix, glm::mat4 viewMatrix) {
@@ -326,7 +316,7 @@ void renderPass(glm::mat4 projectionMatrix, glm::mat4 viewMatrix) {
 
 	mainWindow.setViewport(0, 0, 1366, 768);
 
-	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);				// Sets the clear color to black
+	glClearColor(0.0f, 0.0f, 0.0f, 0.0f);	// Sets the clear color to black
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);	// Clears the screen color and depth, color cleared to specified clear color
 
 	glUniformMatrix4fv(uniformProjection, 1, GL_FALSE, glm::value_ptr(projectionMatrix));
@@ -361,18 +351,20 @@ int main() {
 	}
 
 	// Create objects and store the mesh pointers in meshList
-	CreateObjects();	// Creates a simple shape with 4 triangles
-	CreateShader();		// Compiles a shader program with vShader and fShader
-	CreatePlane(10, 10);
+	CreateObjects();				// Creates a simple shape with 4 triangles
+	CreateShader();					// Compiles a shader program with vShader and fShader
+	CreatePlane(10, 10);	// Creates a plane object ow width and height of 10
 	//CreateObject();
 
-	camera = Camera(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, 0.0f, 5.0f, 0.5f);	// Sets up camera properties
+	camera = Camera(glm::vec3(0.0f, 10.0f, 10.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, -45.0f, 5.0f, 0.5f);	// Sets up camera properties
 
 	// Create and load textures from designated directory
 	brickTexture = Texture((char*) "Textures/brick.jpg");
 	brickTexture.LoadTextureA();
 	dirtTexture = Texture((char*) "Textures/dirt.jpg");
 	dirtTexture.LoadTextureA();
+	faceTexture = Texture((char*)"Textures/Face.jpg");
+	faceTexture.LoadTextureA();
 
 	shinyMaterial = Material(4.0f, 256);	// Full intensity, higher powers of 2 indicate more shininess
 	dullMaterial = Material(0.3f, 4);	// Low intensity, lower powers of 2 indicates less shininess
@@ -384,7 +376,7 @@ int main() {
 								//amb, dif
 								0.1f, 0.3f,
 								//x, y	  , z
-								0.0, -7.0f, -1.0f);
+								0.0, -1.0f, -1.0f);
 
 	pointLights[0] = PointLight(1.0f, 0.0f, 0.0f,
 								0.0f, 0.0f,
@@ -411,6 +403,8 @@ int main() {
 	// Creates a projection (perspective) matrix
 	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)mainWindow.getBufferWidth()/mainWindow.getBufferHeight(), 0.1f, 100.0f); // Only really need to create it once, unless you're manipulating the projection every frame
 
+	CreateScene();	// Sets the scene up to render
+
 	while (!mainWindow.getShouldClose()) {
 
 		GLfloat now = glfwGetTime();	// (SDL_GetPerformanceCounter(), not returned in seconds)	Gets the current time
@@ -418,7 +412,9 @@ int main() {
 		lastTime = now;					// Sets last time to current time for next loop itteration
 
 		glfwPollEvents();	// Gets user input events
-		camera.keyControl(mainWindow.getKeys(), deltaTime);						// Updates camera location based on keyboard input
+		//camera.keyControl(mainWindow.getKeys(), deltaTime);						// Updates camera location based on keyboard input
+		player->keyControl(mainWindow.getKeys());
+		player->updatePlayer(deltaTime);
 		camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());	// Updates camera rotations based on changes in cursor locations
 		
 		DirectionalShadowMapPass(&mainLight);
