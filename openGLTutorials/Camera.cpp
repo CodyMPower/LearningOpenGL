@@ -38,6 +38,9 @@ void Camera::update() {
 }
 
 void Camera::keyControl(bool* keys, GLfloat deltaTime) {
+	if (!keys[GLFW_KEY_LEFT_ALT])
+		return;
+
 	GLfloat velocity = moveSpeed * deltaTime;
 
 	// Check if any given key is currently being activated

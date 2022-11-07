@@ -374,7 +374,7 @@ int main() {
 								// rgb values
 								1.0f, 1.0f, 1.0f, 
 								//amb, dif
-								0.1f, 0.3f,
+								0.5f, 0.3f,
 								//x, y	  , z
 								0.0, -1.0f, -1.0f);
 
@@ -412,7 +412,7 @@ int main() {
 		lastTime = now;					// Sets last time to current time for next loop itteration
 
 		glfwPollEvents();	// Gets user input events
-		//camera.keyControl(mainWindow.getKeys(), deltaTime);						// Updates camera location based on keyboard input
+		camera.keyControl(mainWindow.getKeys(), deltaTime);						// Updates camera location based on keyboard input
 		player->keyControl(mainWindow.getKeys());
 		player->updatePlayer(deltaTime);
 		camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());	// Updates camera rotations based on changes in cursor locations
