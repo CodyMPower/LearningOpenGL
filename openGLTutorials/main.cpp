@@ -359,9 +359,9 @@ int main() {
 	camera = Camera(glm::vec3(0.0f, 10.0f, 10.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, -45.0f, 5.0f, 0.5f);	// Sets up camera properties
 
 	// Create and load textures from designated directory
-	brickTexture = Texture((char*) "Textures/brick.jpg");
+	brickTexture = Texture((char*)"Textures/brick.jpg");
 	brickTexture.LoadTextureA();
-	dirtTexture = Texture((char*) "Textures/dirt.jpg");
+	dirtTexture = Texture((char*)"Textures/dirt.jpg");
 	dirtTexture.LoadTextureA();
 	faceTexture = Texture((char*)"Textures/Face.jpg");
 	faceTexture.LoadTextureA();
@@ -369,41 +369,57 @@ int main() {
 	shinyMaterial = Material(4.0f, 256);	// Full intensity, higher powers of 2 indicate more shininess
 	dullMaterial = Material(0.3f, 4);	// Low intensity, lower powers of 2 indicates less shininess
 
-							    // Shadow Buffer size
+								// Shadow Buffer size
 	mainLight = DirectionalLight(1024, 1024,
-								// rgb values
-								1.0f, 1.0f, 1.0f, 
-								//amb, dif
-								0.5f, 0.3f,
-								//x, y	  , z
-								0.0, -1.0f, -1.0f);
+		// rgb values
+		1.0f, 1.0f, 1.0f,
+		//amb, dif
+		0.5f, 0.3f,
+		//x, y	  , z
+		0.0, -1.0f, -1.0f);
 
 	pointLights[0] = PointLight(1.0f, 0.0f, 0.0f,
-								0.0f, 0.0f,
-								-4.0f, 0.0f, 0.0f,
-								0.3f, 0.2f, 0.1f);
+		0.0f, 0.0f,
+		-4.0f, 0.0f, 0.0f,
+		0.3f, 0.2f, 0.1f);
 	pointLightCount++;
 
 	pointLights[1] = PointLight(0.0f, 0.0f, 1.0f,
-								0.0f, 0.0f,
-								4.0f, 0.0f, 0.0f,
-								0.3f, 0.1f, 0.1f);
+		0.0f, 0.0f,
+		4.0f, 0.0f, 0.0f,
+		0.3f, 0.1f, 0.1f);
 	pointLightCount++;
 
 
-	
+
 	spotLights[0] = SpotLight(1.0f, 1.0f, 1.0f,
-								0.0f, 2.0f,
-								0.0f, 0.0f, 0.0f,
-								-100.0f, -1.0f, 0.0f,
-								0.3f, 0.2f, 0.1f,
-								20.0f);
+		0.0f, 2.0f,
+		0.0f, 0.0f, 0.0f,
+		-100.0f, -1.0f, 0.0f,
+		0.3f, 0.2f, 0.1f,
+		20.0f);
 	spotLightCount++;
 
 	// Creates a projection (perspective) matrix
-	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)mainWindow.getBufferWidth()/mainWindow.getBufferHeight(), 0.1f, 100.0f); // Only really need to create it once, unless you're manipulating the projection every frame
+	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)mainWindow.getBufferWidth() / mainWindow.getBufferHeight(), 0.1f, 100.0f); // Only really need to create it once, unless you're manipulating the projection every frame
 
 	CreateScene();	// Sets the scene up to render
+
+	glm::vec2 v1 = glm::normalize(glm::vec2(1.0f, 0.0f));
+	glm::vec2 v2 = glm::vec2(-v1.y, v1.x);
+	glm::vec2 p1 = glm::vec2(0.0f, 0.0f);
+	glm::vec2 p2 = glm::vec2(5.0f, 0.0f);
+	double radius = 1.0f;
+
+	if (player->_tempFunc(v1, v2, p1, p2, radius)) {
+		printf("Sees food\n");
+	}
+	else {
+		printf("Does not see food\n");
+	}
+
+	glm::vec2 food_arr[1];
+	bool vision_arr[11];
 
 	while (!mainWindow.getShouldClose()) {
 
@@ -419,6 +435,20 @@ int main() {
 		
 		DirectionalShadowMapPass(&mainLight);
 		renderPass(projection, camera.calculateViewMatrix());
+
+		food_arr[0] = glm::vec2(0.0f, 0.0f);
+		for (int i = 0; i < 11; i++)
+		{
+			vision_arr[i] = false;
+		}
+
+		player->playerVision(vision_arr, 11, food_arr, 1, 1.0f, 1.0f);
+
+		for (int i = 0; i < 11; i++)
+		{
+			printf("%d", vision_arr[i]);
+		}
+		printf("\n");
 
 		glUseProgram(0);							// Unbinds the shader program
 

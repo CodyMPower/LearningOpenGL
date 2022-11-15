@@ -27,9 +27,9 @@ void PlayerObject::_setDefaults()
 	this->rot_speed = 2.0f;
 }
 
-void PlayerObject::_applyRotation(glm::vec2* rotatedVector) {
-	double sin_val = sin(this->rotation_rad);
-	double cos_val = cos(this->rotation_rad);
+void PlayerObject::_applyRotation(glm::vec2* rotatedVector, double angle) {
+	double sin_val = sin(angle);
+	double cos_val = cos(angle);
 
 	glm::mat2 rot_matrix = glm::mat2(glm::vec2(cos_val, sin_val),
 										glm::vec2(-sin_val, cos_val));
@@ -41,12 +41,120 @@ void PlayerObject::_applyRotation(glm::vec2* rotatedVector) {
 glm::vec2 PlayerObject::getLookingVector() {
 	glm::vec2 facingVec = glm::vec2(0.0f, -1.0f);
 	
-	_applyRotation(&facingVec);
+	_applyRotation(&facingVec, this->rotation_rad);
 
-	printf("Facing Direction x: %f\n", facingVec.x);
-	printf("Facing Direction z: %f\n\n", facingVec.y);
+	//printf("Facing Direction x: %f\n", facingVec.x);
+	//printf("Facing Direction z: %f\n\n", facingVec.y);
 
 	return facingVec;
+}
+
+void PlayerObject::playerVision(bool vision_arr[], int vision_size, glm::vec2 food_arr[], int food_size, double angle_rads, double food_radius)
+{
+	double max_angle = angle_rads / 2;
+	int steps = vision_size / 2;
+	double angle = 0;
+	glm::vec2 vision_vec;
+
+	for (int i = 0; i < vision_size; i++)
+	{
+		for (int j = 0; j < food_size; j++)
+		{
+			if (vision_arr[i] != true)
+			{
+				angle = -((max_angle / steps) * (i - steps));
+
+				vision_vec = getLookingVector();
+				_applyRotation(&vision_vec, angle);
+
+				vision_arr[i] = _seesFood(vision_vec, food_arr[j], food_radius);
+			}
+		}
+	}
+}
+
+
+
+bool PlayerObject::_seesFood(glm::vec2 v1, glm::vec2 p2, double radius)
+{
+	glm::vec2 v2 = glm::vec2(-v1.y, v1.x);
+	glm::vec2 p1 = glm::vec2(this->posVec.x, this->posVec.z);
+	double denom = 0;
+	double num = 0;
+	double t1 = 0;
+	double t2 = 0;
+	//printf("V1.x: %f, V1.y: %f\n", v1.x, v1.y);
+	//printf("V2.x: %f, V2.y: %f\n", v2.x, v2.y);
+	//printf("P1.x: %f, P1.y: %f\n", p1.x, p1.y);
+	//printf("P2.x: %f, P2.y: %f\n", p2.x, p2.y);
+	if (v1.x >= 0.01)
+	{
+		// t2 calculation:
+		denom = 1 - ((v1.y * v2.x) / (v1.x * v2.y));
+		num = ((v1.y * p2.x) / (v1.x * v2.y)) + (p1.y / v2.y) - ((v1.y * p1.x) / (v1.x * v2.y)) - (p2.y / v2.y);
+		t2 = num / denom;
+		//printf("T2: %f\n", t2);
+
+		num = v2.x * t2 + p2.x - p1.x;
+		denom = v1.x;
+		
+		t1 = num / denom;
+
+		return (abs(t2) <= radius) && (t1 > 0);
+	}
+	else
+	{
+		denom = 1 - ((v1.x * v2.y) / (v1.y * v2.x));
+		num = ((v2.y * p1.x) / (v2.x * v1.y)) + (p2.y / v1.y) - ((v2.y * p2.x) / (v2.x * v1.y)) - (p1.y / v1.y);
+		t1 = num / denom;
+
+		num = v1.x * t1 + p1.x - p2.x;
+		denom = v2.x;
+
+		t2 = num / denom;
+
+		//printf("T2: %f\n", t2);
+		return (abs(t2) <= radius) && (t1 > 0);
+	}
+	return false;
+}
+
+bool PlayerObject::_tempFunc(glm::vec2 v1, glm::vec2 v2, glm::vec2 p1, glm::vec2 p2, double radius)
+{
+	double denom = 0;
+	double num = 0;
+	double t1 = 0;
+	double t2 = 0;
+	if (v1.x >= 0.01)
+	{
+		// t2 calculation:
+		denom = 1 - ((v1.y * v2.x) / (v1.x * v2.y));
+		num = ((v1.y * p2.x) / (v1.x * v2.y)) + (p1.y / v2.y) - ((v1.y * p1.x) / (v1.x * v2.y)) - (p2.y / v2.y);
+		t2 = num / denom;
+		printf("T2: %f\n", t2);
+
+		num = v2.x * t2 + p2.x - p1.x;
+		denom = v1.x;
+
+		t1 = num / denom;
+
+		return (abs(t2) <= radius) && (t1 > 0);
+	}
+	else
+	{
+		denom = 1 - ((v1.x * v2.y) / (v1.y * v2.x));
+		num = ((v2.y * p1.x) / (v2.x * v1.y)) + (p2.y / v1.y) - ((v2.y * p2.x) / (v2.x * v1.y)) - (p1.y / v1.y);
+		t1 = num / denom;
+
+		num = v1.x * t1 + p1.x - p2.x;
+		denom = v2.x;
+
+		t2 = num / denom;
+
+		printf("T2: %f\n", t2);
+		return (abs(t2) <= radius) && (t1 > 0);
+	}
+	return false;
 }
 
 void PlayerObject::updatePlayer(GLfloat deltaTime) {
@@ -56,7 +164,7 @@ void PlayerObject::updatePlayer(GLfloat deltaTime) {
 
 	// Apply Rotation Matrix to Velocity
 	glm::vec2 vel_mod = glm::vec2(velocity.x, velocity.z);
-	_applyRotation(&vel_mod);// = rot_matrix * vel_mod;
+	_applyRotation(&vel_mod, this->rotation_rad);// = rot_matrix * vel_mod;
 	getLookingVector();
 
 	velocity.x = vel_mod.x;
