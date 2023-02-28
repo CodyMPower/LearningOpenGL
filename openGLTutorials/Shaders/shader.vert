@@ -23,7 +23,8 @@ void main() {
 	TexCoord0 = tex;
 	Normal = mat3(transpose(inverse(model))) * norm;	// Normal needs to be moved relative to the rotation of the object
 														// mat3(model) leaves only the rotation of the model
-														// Inversion and transposition accounts for any transformation and scaling that could change the normal relative to the vertex
+														// Inversion and transposition accounts for any transformation and 
+														// scaling that could change the normal relative to the vertex
 
 	FragPos = (model * vec4(pos, 1.0f)).xyz;	// Swizeling(?): using the components of a vector to create another vector
 }

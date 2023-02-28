@@ -32,7 +32,7 @@ void Mesh::CreateMesh(GLfloat* vertices, unsigned int* indices, unsigned int num
 	// 3:						The amount of data to pass though the attribute pointer (the x, y, and z values of the vertex)
 	// GL_FLOAT:				The type of data being passed (float)
 	// GL_FALSE:				Is the data normalized? (false)
-	// sizeof(vertices[0]) * 5:	How much data is skipped between each data chunk used (skip 2 texture values after the 3 coord values) (can be used if texture coordinates are included in the buffer)
+	// sizeof(vertices[0]) * 8:	whe size of 1 chunk of data (skip 2 texture values and 3 normal values after the 3 coord values) (can be used if texture coordinates are included in the buffer)
 	// 0:						The offset of where the data will start being read from (start at the start of the buffer)
 	glEnableVertexAttribArray(0);																				// Enable the attrib array at location 0
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]) * 8, (void*)(sizeof(vertices[0]) * 3));	// Creates attribute pointer for location 1, texture attrib

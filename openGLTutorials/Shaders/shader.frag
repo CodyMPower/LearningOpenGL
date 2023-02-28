@@ -41,20 +41,23 @@ struct Material{
 	float shininess;
 };
 
-uniform int pointLightCount;
-uniform int spotLightCount;
+uniform int pointLightCount;	// How many point lights are available
+uniform int spotLightCount;		// How many spot lights are available
 
-uniform DirectionalLight directionalLight;
-uniform PointLight pointLights[MAX_POINT_LIGHTS];
-uniform SpotLight spotLights[MAX_SPOT_LIGHTS];
+uniform DirectionalLight directionalLight;			// A directional light (sunlight) to calculate lighting
+uniform PointLight pointLights[MAX_POINT_LIGHTS];	// A list of point lights to calculate lighting
+uniform SpotLight spotLights[MAX_SPOT_LIGHTS];		// A list of spotlights to calculate lighting
 
-uniform sampler2D theTexture;
-uniform sampler2D directionalShadowMap;
+uniform sampler2D theTexture;			// Texture sample for the mesh
+uniform sampler2D directionalShadowMap;	// Depth sample of the world for shadow calculations
 
-uniform Material material;
+uniform Material material;	// Material being used with the mesh
 
 uniform vec3 eyePosition;	// Camera Coordinates in world space
 
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------<Code>-------------------------------------------------------------------------------
+//--------------------------------------------------------------------------------------------------------------------------------------------------------------------
 float CalcDirectionalShadowFactor(DirectionalLight light) {
 	
 	vec3 projCoords = DirectionalLightSpacePos.xyz / DirectionalLightSpacePos.w; // Normalizing directional light to "Normalized device coordinates" (-1 to 1)

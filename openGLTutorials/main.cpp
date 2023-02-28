@@ -25,6 +25,9 @@
 #include "Material.h"
 #include "RenderedObject.h"
 #include "PlayerObject.h"
+#include "MatlabHandler.h"
+
+MatlabHandler model;
 
 std::vector<Mesh*> meshList;
 std::vector<Shader*> shaderList;
@@ -138,7 +141,7 @@ void CreateObjects()
 
 	GLfloat vertices[] = {
 		//	x      y      z			u	  v			nx	  ny    nz
-			-1.0f, -1.0f, -0.6f,		0.0f, 0.0f,		0.0f, 0.0f, 0.0f,
+			-1.0f, -1.0f, -0.6f,	0.0f, 0.0f,		0.0f, 0.0f, 0.0f,
 			0.0f, -1.0f, 1.0f,		0.5f, 0.0f,		0.0f, 0.0f, 0.0f,
 			1.0f, -1.0f, -0.6f,		1.0f, 0.0f,		0.0f, 0.0f, 0.0f,
 			0.0f, 1.0f, 0.0f,		0.5f, 1.0f,		0.0f, 0.0f, 0.0f
@@ -190,7 +193,7 @@ void CreateScene() {
 	RenderedObject* playerTriangle = new RenderedObject(meshList[0], &brickTexture, &dullMaterial);
 	playerTriangle->setTransformMatrix(glm::vec3(2.0f, -1.0f, -2.0f), glm::vec3(0.0f, 1.0f, 0.0f),
 		0.0f, glm::vec3(1.0f, 1.0f, 1.0f));
-	player = new PlayerObject(glm::vec3(2.0f, -1.0f, -2.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f),
+	player = new PlayerObject(glm::vec3(5.0f, -1.0f, -5.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f),
 		playerTriangle);
 	objectVector.push_back(playerTriangle);
 }
@@ -286,33 +289,34 @@ void renderScene() {
 
 void DirectionalShadowMapPass(DirectionalLight* light) {
 	
-	directionalShadowShader.UseShader();	// Set up the shadow shader to be the next shader used
+	directionalShadowShader.UseShader();									// Set up the shadow shader to be the next shader used
 
-	glViewport(0, 0, light->GetShadowMap()->GetShadowWidth(), light->GetShadowMap()->GetShadowHeight());	// Gets the dimentions of the light source
+	glViewport(0, 0, light->GetShadowMap()->GetShadowWidth(),				// Gets the dimentions of the light source
+			light->GetShadowMap()->GetShadowHeight());
 
-	light->GetShadowMap()->Write();		// Sets up light source shadow map to be written to by shader
-	glClear(GL_DEPTH_BUFFER_BIT);	// Clears the depth buffer for the new shadow map
+	light->GetShadowMap()->Write();											// Sets up light source shadow map to be written to by shader
+	glClear(GL_DEPTH_BUFFER_BIT);											// Clears the depth buffer for the new shadow map
 
 	uniformModel = directionalShadowShader.GetModelLocation();				// Sets the uniformModel location to the shadow shader
 	glm::mat4 lightTransform = light->CalculateLightTransform();			// Calculates the transform matrix from the light
 	directionalShadowShader.SetDirectionalLightTransform(&lightTransform);	// Links the light transform matrix to the shadow shader
 
-	renderScene();	// Render the current sceen with the current objects
+	renderScene();															// Render the current sceen with the current objects
 
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);	// Unbinds the frame buffer
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);									// Unbinds the frame buffer from the shaders
 }
 
 void renderPass(glm::mat4 projectionMatrix, glm::mat4 viewMatrix) {
-	// Uses the first shader in the shader list
-	shaderList[0]->UseShader();
+	
+	shaderList[0]->UseShader();													// Uses the vertex shader from the shader list
 
 	// Stores the IDs of the uniform locations
-	uniformModel = shaderList[0]->GetModelLocation();
-	uniformProjection = shaderList[0]->GetProjectionLocation();
-	uniformView = shaderList[0]->GetViewLocation();
-	uniformEyePosition = shaderList[0]->GetEyePositionLocation();
-	uniformSpecularIntensity = shaderList[0]->GetSpecularIntensityLocation();
-	uniformShininess = shaderList[0]->GetShininessLocation();
+	uniformModel = shaderList[0]->GetModelLocation();							// Gets the model location in the shader				( uniform mat4 model )
+	uniformProjection = shaderList[0]->GetProjectionLocation();					// Gets the progection location in the shader			( uniform mat4 projection )
+	uniformView = shaderList[0]->GetViewLocation();								// Gets the view location in the shader					( unifrom mat4 view )
+	uniformEyePosition = shaderList[0]->GetEyePositionLocation();				// Gets the eye position location in the shader			(  )
+	uniformSpecularIntensity = shaderList[0]->GetSpecularIntensityLocation();	// Gets the specular intesnity location in the shader	(  )
+	uniformShininess = shaderList[0]->GetShininessLocation();					// Gets the shininess location in the shader			(  )
 
 	mainWindow.setViewport(0, 0, 1366, 768);
 
@@ -411,15 +415,17 @@ int main() {
 	glm::vec2 p2 = glm::vec2(5.0f, 0.0f);
 	double radius = 1.0f;
 
-	if (player->_tempFunc(v1, v2, p1, p2, radius)) {
-		printf("Sees food\n");
-	}
-	else {
-		printf("Does not see food\n");
-	}
-
+	const int max_vision = 23;
 	glm::vec2 food_arr[1];
-	bool vision_arr[11];
+	bool vision_arr[max_vision];
+
+	std::vector<int> input;
+	input.clear();
+
+	for (int i = 0; i < max_vision; i++)
+		input.push_back(0);
+
+	std::vector<bool> output = model.getModelResults(input);
 
 	while (!mainWindow.getShouldClose()) {
 
@@ -427,28 +433,49 @@ int main() {
 		deltaTime = now - lastTime;		// ((now - lastTime) * 1000 / SDL_GetPerformanveFrequency)	Gets the change in ime from last itteration to current
 		lastTime = now;					// Sets last time to current time for next loop itteration
 
-		glfwPollEvents();	// Gets user input events
-		camera.keyControl(mainWindow.getKeys(), deltaTime);						// Updates camera location based on keyboard input
-		player->keyControl(mainWindow.getKeys());
-		player->updatePlayer(deltaTime);
-		camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());	// Updates camera rotations based on changes in cursor locations
-		
-		DirectionalShadowMapPass(&mainLight);
-		renderPass(projection, camera.calculateViewMatrix());
 
 		food_arr[0] = glm::vec2(0.0f, 0.0f);
-		for (int i = 0; i < 11; i++)
+		for (int i = 0; i < max_vision; i++)
 		{
 			vision_arr[i] = false;
 		}
 
-		player->playerVision(vision_arr, 11, food_arr, 1, 1.0f, 1.0f);
+		player->playerVision(vision_arr, max_vision, food_arr, 1, 1.0f, 1.0f);
 
-		for (int i = 0; i < 11; i++)
+		printf("Model Inputs:  ");
+		for (int i = 0; i < max_vision; i++)
 		{
-			printf("%d", vision_arr[i]);
+			input.at(i) = vision_arr[i] * 15 ;
+			if (vision_arr[i])
+				printf("\033[0;32m%d\033[0;37m", vision_arr[i]);
+			else
+				printf("%d", vision_arr[i]);
 		}
 		printf("\n");
+
+		output = model.getModelResults(input);
+
+		printf("Model Results: ");
+		for (int i = 0; i < 3; i++)
+		{
+			if (output.at(i))
+				printf("\033[0;32m%d\033[0;37m", 1);
+			else
+				printf("%d", 0);
+		}
+		printf("\n");
+
+
+		glfwPollEvents();	// Gets user input events
+		camera.keyControl(mainWindow.getKeys(), deltaTime);						// Updates camera location based on keyboard input
+		camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());	// Updates camera rotations based on changes in cursor locations
+		//player->keyControl(mainWindow.getKeys());
+		
+		player->modelCondrol(output);
+		player->updatePlayer(0.0667);//15 steps / second sim time
+		
+		DirectionalShadowMapPass(&mainLight);
+		renderPass(projection, camera.calculateViewMatrix());
 
 		glUseProgram(0);							// Unbinds the shader program
 
