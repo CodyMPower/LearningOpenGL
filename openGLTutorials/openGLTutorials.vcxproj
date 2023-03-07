@@ -21,6 +21,9 @@
   <ItemGroup>
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="DirectionalLight.cpp" />
+    <ClCompile Include="FileMan.cpp" />
+    <ClCompile Include="FileParser.cpp" />
+    <ClCompile Include="Food.cpp" />
     <ClCompile Include="GLWindow.cpp" />
     <ClCompile Include="Light.cpp" />
     <ClCompile Include="main.cpp" />
@@ -30,6 +33,8 @@
     <ClCompile Include="PlayerObject.cpp" />
     <ClCompile Include="PointLight.cpp" />
     <ClCompile Include="RenderedObject.cpp" />
+    <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="Scene.cpp" />
     <ClCompile Include="Shader.cpp" />
     <ClCompile Include="ShadowMap.cpp" />
     <ClCompile Include="SpotLight.cpp" />
@@ -48,6 +53,9 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="CommonVals.h" />
     <ClInclude Include="DirectionalLight.h" />
+    <ClInclude Include="FileMan.h" />
+    <ClInclude Include="FileParser.h" />
+    <ClInclude Include="Food.h" />
     <ClInclude Include="GLWindow.h" />
     <ClInclude Include="Light.h" />
     <ClInclude Include="Material.h" />
@@ -56,11 +64,17 @@
     <ClInclude Include="PlayerObject.h" />
     <ClInclude Include="PointLight.h" />
     <ClInclude Include="RenderedObject.h" />
+    <ClInclude Include="Renderer.h" />
     <ClInclude Include="resource.h" />
+    <ClInclude Include="Scene.h" />
     <ClInclude Include="Shader.h" />
     <ClInclude Include="ShadowMap.h" />
     <ClInclude Include="SpotLight.h" />
     <ClInclude Include="Texture.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="CSV_Files\file.csv" />
+    <None Include="CSV_Files\long_data_2023_03_05.csv" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -147,6 +161,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)Dependencies\GLEW\include;$(SolutionDir)Dependencies\GLFW\include;$(SolutionDir)Dependencies\GLM;C:\Program Files\MATLAB\R2022b\extern\include</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

@@ -20,11 +20,16 @@ public:
 	Texture* getTexture() { return objectTexture; }
 	Material* getMaterial() { return objectMaterial; }
 
+	glm::vec3 getPos() { return this->posVec; }
+	glm::vec3 getRot() { return this->rotVec; }
+	glm::vec3 getSize() { return this->sizeVec; }
+	float getRotAng() { return this->rotationAngle; }
+
 	void setTransformMatrix(glm::mat4 transformMatrix) { this->transformMatrix = transformMatrix; }
 	void setTransformMatrix(glm::vec3 posVec, glm::vec3 rotVec, float rotationAngle, glm::vec3 sizeVec);
+	void setPosVec(glm::vec3 posVec);
 
 	void calculateTransformMatrix();
-
 	void renderObject(GLuint uniformModel, GLuint uniformSpecularIntensity, GLuint uniformShininess);
 
 	~RenderedObject();

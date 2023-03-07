@@ -38,8 +38,8 @@ void Camera::update() {
 }
 
 void Camera::keyControl(bool* keys, GLfloat deltaTime) {
-	if (!keys[GLFW_KEY_LEFT_ALT])
-		return;
+	/*if (!keys[GLFW_KEY_LEFT_ALT])
+		return;*/
 
 	GLfloat velocity = moveSpeed * deltaTime;
 

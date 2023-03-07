@@ -1,6 +1,8 @@
 #pragma once
 #include <chrono>
 #include <vector>
+#include <thread>
+#include <mutex>
 
 #include "MatlabDataArray.hpp"
 #include "MatlabEngine.hpp"
@@ -18,6 +20,14 @@ public:
 	~MatlabHandler();
 
 private:
+	void threadFunc();
+
+	std::thread t1;
+	std::vector<int> modelInputs;
+	std::vector<bool> modelResults;
+	std::mutex resultsMutex;
+	bool modelActive, modelRunning;
+
 	std::unique_ptr < matlab::engine::MATLABEngine> matlabPtr;
 	matlab::data::ArrayFactory factory;
 };

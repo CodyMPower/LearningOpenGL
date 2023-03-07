@@ -4,6 +4,8 @@
 #include <string.h>
 #include <cmath>
 #include <vector>
+#include <iostream>
+#include <filesystem>
 
 #include <GL/glew.h>
 #include <GLFW/glfw3.h>
@@ -26,12 +28,29 @@
 #include "RenderedObject.h"
 #include "PlayerObject.h"
 #include "MatlabHandler.h"
+#include "Food.h"
+#include "FileMan.h"
+#include "FileParser.h"
 
-MatlabHandler model;
+#define PLAYER_SIZE 1
+#define BOARD_SIZE 40
+
+#define NO_MODE 0
+#define MATL_MODE 1
+#define FILE_MODE 2
+#define FPGA_MODE 3
+#define MAX_MODE 3
+
+MatlabHandler* model;
+FileMan manager;
+FileParser parser;
 
 std::vector<Mesh*> meshList;
 std::vector<Shader*> shaderList;
 std::vector<RenderedObject*> objectVector;
+std::vector<Food*> foodVector;
+std::vector<std::vector<std::string>> modelOutput;
+
 PlayerObject* player;
 Shader directionalShadowShader;
 Camera camera;
@@ -52,6 +71,8 @@ GLWindow mainWindow;
 GLfloat deltaTime = 0.0f;
 GLfloat lastTime = 0.0f;
 
+int seed = 0;
+int functionalMode = 0;
 bool leftDirection = true;		// Is the triangle moving left?
 float triOffset = 0.0f;			// The current offset
 float triMaxOffset = 0.7f;		// The maximum offset of the triangle
@@ -147,18 +168,6 @@ void CreateObjects()
 			0.0f, 1.0f, 0.0f,		0.5f, 1.0f,		0.0f, 0.0f, 0.0f
 	};
 
-	unsigned int floorIndices[] = {
-		0, 2, 1,
-		1, 2, 3
-	};
-
-	GLfloat floorVertices[] = {
-		-10.0f, 0.0f, -10.0f,	0.0f, 0.0f,		0.0f, -1.0f, 0.0f,
-		10.0f, 0.0f, -10.0f,	10.0f, 0.0f,	0.0f, -1.0f, 0.0f,
-		-10.0f, 0.0f, 10.0f,	0.0f, 10.0f,	0.0f, -1.0f, 0.0f,
-		10.0f, 0.0f, 10.0f,		10.0f, 10.0f,	0.0f, -1.0f, 0.0f
-	};
-
 	calcAverageNormals(indices, 12, vertices, 32, 8, 5);
 
 	Mesh* obj1 = new Mesh();
@@ -168,10 +177,6 @@ void CreateObjects()
 	Mesh* obj2 = new Mesh();
 	obj2->CreateMesh(vertices, indices, 32, 12);
 	meshList.push_back(obj2);
-
-	Mesh* obj3 = new Mesh();
-	obj3->CreateMesh(floorVertices, floorIndices, 32, 6);
-	meshList.push_back(obj3);
 }
 
 void CreateScene() {
@@ -187,7 +192,7 @@ void CreateScene() {
 
 	RenderedObject* groundPlane = new RenderedObject(meshList[2], &dirtTexture, &shinyMaterial);
 	groundPlane->setTransformMatrix(glm::vec3(0.0f, -2.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f),
-		0.0f, glm::vec3(2.0, 1.0, 2.0));
+		0.0f, glm::vec3(1.0707, 1.0, 1.0707));
 	objectVector.push_back(groundPlane);
 
 	RenderedObject* playerTriangle = new RenderedObject(meshList[0], &brickTexture, &dullMaterial);
@@ -196,6 +201,14 @@ void CreateScene() {
 	player = new PlayerObject(glm::vec3(5.0f, -1.0f, -5.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f),
 		playerTriangle);
 	objectVector.push_back(playerTriangle);
+
+	Food* triangle = new Food(meshList[0], &dirtTexture, &dullMaterial);
+	triangle->setTransformMatrix(glm::vec3(0.0f, -1.0f, -2.0f), glm::vec3(0.0f, 1.0f, 0.0f),
+		0.0f, glm::vec3(1.0f, 1.0f, 1.0f));
+	triangle->setSize(1.0f);
+
+	foodVector.push_back(triangle);
+	objectVector.push_back(triangle);
 }
 
 void CreateShader() {
@@ -346,7 +359,206 @@ void renderPass(glm::mat4 projectionMatrix, glm::mat4 viewMatrix) {
 	
 }
 
+double genRand(double min, double max)
+{
+	double val = (double)rand() / RAND_MAX;
+	return min + val * (max - min);
+}
+
+int checkForCollisions()
+{
+	glm::vec3 playerPos = player->getPlayerObject()->getPos();
+	glm::vec3 foodPos;
+	glm::vec3 distance;
+
+	for (Food* currFood : foodVector)
+	{
+		foodPos = currFood->getPos();
+		distance = foodPos - playerPos;
+
+		if (glm::length(distance) <= currFood->getSize() + PLAYER_SIZE)
+		{
+			int x = genRand(-BOARD_SIZE / 2, BOARD_SIZE / 2);
+			int z = genRand(-BOARD_SIZE / 2, BOARD_SIZE / 2);
+			currFood->setPosVec(glm::vec3(x, -1.0, z));
+			currFood->calculateTransformMatrix();
+		}
+	}
+	return 0;
+}
+
+std::vector<bool> getData(std::vector<std::string> recordingData)
+{
+	std::vector<bool> output;
+	output.clear();
+
+	if (recordingData.empty())
+		return output;
+
+	for (std::string token : recordingData)
+		output.push_back(std::stoi(token) ? true : false);
+
+	return output;
+}
+
+std::vector<bool> getStoredData(std::vector<std::vector<std::string>> recording, int time_val)
+{
+	std::vector<bool> output;
+	output.clear();
+
+	if (time_val >= recording.size() - 1)
+		return output;
+
+	output = getData(recording.at(time_val + 1));
+	return output;
+}
+
+
+std::vector<bool> getModelOutput(std::vector<int> input, double time_val)
+{
+	switch (functionalMode)
+	{
+	case NO_MODE:
+		break;
+	case MATL_MODE:
+		return model->getModelResults(input);
+	case FILE_MODE:
+		return getStoredData(modelOutput, time_val);
+	}
+
+	return std::vector<bool>();
+}
+
+std::vector<std::string> outputToString(std::vector<bool> modelOutput) {
+	std::vector<std::string> returnVar;
+	returnVar.clear();
+
+	if (modelOutput.empty())
+		return returnVar;
+
+	for (bool data : modelOutput)
+		returnVar.push_back(std::to_string(data));
+
+	return returnVar;
+}
+
+void appendInputToRecords(std::vector<bool> modelData)
+{
+	if (modelData.empty())
+		return;
+
+	if (functionalMode == NO_MODE || functionalMode == FILE_MODE)
+		return;
+
+	modelOutput.push_back(outputToString(modelData));
+}
+
+void getMode() {
+	int modeObtained = 0;
+	std::string input;
+
+	while (!functionalMode)
+	{
+		std::cout << "What Mode Would You Like To Run (MATL_MODE = 1, FILE_MODE = 2, FPGA_MODE = 3):";
+		std::cin >> input;
+		modeObtained = std::stoi(input);
+
+		if (modeObtained < NO_MODE || modeObtained > MAX_MODE)
+			std::cout << "Mode " << input << " Is Not A Valid Input Mode\n";
+		else
+		{
+			functionalMode = modeObtained;
+			return;
+		}
+	}
+}
+
+void fileSetup()
+{
+	bool finished = false;
+	std::string file;
+	std::vector<std::string> fileData;
+
+	while (!finished)
+	{
+		std::cout << "What Recording File Would You Like To Read From: ";
+		std::cin >> file;
+
+		manager.setFileName(file);
+		manager.setMode(std::fstream::in | std::fstream::out);
+		fileData = manager.readFile();
+
+		if (fileData.empty())
+			std::cout << "File " << file << " Is Empty, Please Choose Another File\n";
+		else
+		{
+			modelOutput = parser.parseCSV(fileData);
+			seed = std::stoi(modelOutput.at(0).at(0));
+			std::cout << seed << "\n";
+			srand(seed);
+			finished = true;
+		}
+	}
+}
+
+void matlabSetup()
+{
+	model = new MatlabHandler();
+
+	seed = rand();
+	srand(seed);
+
+	std::string seed_str = std::to_string(seed);
+	std::vector<std::string> line;
+	line.push_back(seed_str);
+	modelOutput.push_back(line);
+}
+
+void fileSave()
+{
+	if (functionalMode == NO_MODE || functionalMode == FILE_MODE)
+		return;
+	
+	std::string input;
+	std::cout << "What Would You Like The Recording To Be Called (\"no file\" to not save): ";
+	std::cin >> input;
+
+	std::transform(input.begin(), input.end(), input.begin(),
+		[](unsigned char c) { return std::tolower(c); });
+
+	if (input.at(0) == '\n' || input.compare("no file") == 0)
+		return;
+
+	manager.setFileName(input);
+	std::vector<std::string> fileData = parser.formatCSV(modelOutput);
+	manager.setMode(std::fstream::in | std::fstream::out);
+	manager.writeFile(fileData);
+}
+
+void modeSetup()
+{
+	switch (functionalMode)
+	{
+	case NO_MODE:
+		return;
+	case MATL_MODE:
+		matlabSetup();
+		return;
+	case FILE_MODE:
+		fileSetup();
+		return;
+	}
+}
+
 int main() {
+	std::filesystem::path path = std::filesystem::current_path();
+	path /= "CSV_Files";
+	manager.setFilePath(path.string());
+
+	std::cout << path.string() << "\n";
+
+	getMode();
+	modeSetup();
 
 	// Creates a window and checks if the window was initalizes correctly
 	mainWindow = GLWindow(1366, 768);
@@ -357,7 +569,7 @@ int main() {
 	// Create objects and store the mesh pointers in meshList
 	CreateObjects();				// Creates a simple shape with 4 triangles
 	CreateShader();					// Compiles a shader program with vShader and fShader
-	CreatePlane(10, 10);	// Creates a plane object ow width and height of 10
+	CreatePlane(40, 40);	// Creates a plane object of width and height of 10
 	//CreateObject();
 
 	camera = Camera(glm::vec3(0.0f, 10.0f, 10.0f), glm::vec3(0.0f, 1.0f, 0.0f), -90.0f, -45.0f, 5.0f, 0.5f);	// Sets up camera properties
@@ -425,7 +637,9 @@ int main() {
 	for (int i = 0; i < max_vision; i++)
 		input.push_back(0);
 
-	std::vector<bool> output = model.getModelResults(input);
+	std::vector<bool> output;
+
+	int time = 0;
 
 	while (!mainWindow.getShouldClose()) {
 
@@ -433,56 +647,65 @@ int main() {
 		deltaTime = now - lastTime;		// ((now - lastTime) * 1000 / SDL_GetPerformanveFrequency)	Gets the change in ime from last itteration to current
 		lastTime = now;					// Sets last time to current time for next loop itteration
 
-
-		food_arr[0] = glm::vec2(0.0f, 0.0f);
+		food_arr[0] = glm::vec2(foodVector.at(0)->getPos().x, foodVector.at(0)->getPos().z);
 		for (int i = 0; i < max_vision; i++)
 		{
 			vision_arr[i] = false;
 		}
 
 		player->playerVision(vision_arr, max_vision, food_arr, 1, 1.0f, 1.0f);
-
-		printf("Model Inputs:  ");
 		for (int i = 0; i < max_vision; i++)
+			input.at(i) = vision_arr[i] * 15;
+
+		output = getModelOutput(input, time);
+
+		if (!output.empty())
 		{
-			input.at(i) = vision_arr[i] * 15 ;
-			if (vision_arr[i])
-				printf("\033[0;32m%d\033[0;37m", vision_arr[i]);
-			else
-				printf("%d", vision_arr[i]);
+			printf("Model Inputs:  ");
+			for (int i = 0; i < max_vision; i++)
+			{
+				input.at(i) = vision_arr[i] * 15;
+				if (vision_arr[i])
+					printf("\033[0;32m%d\033[0;37m", vision_arr[i]);
+				else
+					printf("%d", vision_arr[i]);
+			}
+			printf("\n");
+			printf("Model Results: ");
+			for (int i = 0; i < 3; i++)
+			{
+				if (output.at(i))
+					printf("\033[0;32m%d\033[0;37m", 1);
+				else
+					printf("%d", 0);
+			}
+			printf("\n");
 		}
-		printf("\n");
-
-		output = model.getModelResults(input);
-
-		printf("Model Results: ");
-		for (int i = 0; i < 3; i++)
-		{
-			if (output.at(i))
-				printf("\033[0;32m%d\033[0;37m", 1);
-			else
-				printf("%d", 0);
-		}
-		printf("\n");
-
 
 		glfwPollEvents();	// Gets user input events
 		camera.keyControl(mainWindow.getKeys(), deltaTime);						// Updates camera location based on keyboard input
 		camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());	// Updates camera rotations based on changes in cursor locations
 		//player->keyControl(mainWindow.getKeys());
 		
-		player->modelCondrol(output);
-		player->updatePlayer(0.0667);//15 steps / second sim time
+		if (!output.empty())
+			player->modelCondrol(output);
+		player->updatePlayer(0.03333);//15 steps / second sim time
+		checkForCollisions();
 		
 		DirectionalShadowMapPass(&mainLight);
 		renderPass(projection, camera.calculateViewMatrix());
 
 		glUseProgram(0);							// Unbinds the shader program
-
+		//
 		mainWindow.swapBuffers();	// Swaps the window's current buffer with the buffer the program was working on
+		time++;
+
+		appendInputToRecords(output);
 	}
 
+	std::cout << modelOutput.size() << "\n";
 	mainWindow.~GLWindow();	// Destroys the window after use
+	fileSave();
 
 	return 0;
 
