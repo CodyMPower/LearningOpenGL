@@ -27,7 +27,6 @@
 #include "Material.h"
 #include "RenderedObject.h"
 #include "PlayerObject.h"
-#include "MatlabHandler.h"
 #include "Food.h"
 #include "FileMan.h"
 #include "FileParser.h"
@@ -36,12 +35,10 @@
 #define BOARD_SIZE 40
 
 #define NO_MODE 0
-#define MATL_MODE 1
-#define FILE_MODE 2
-#define FPGA_MODE 3
-#define MAX_MODE 3
+#define FILE_MODE 1
+#define FPGA_MODE 2
+#define MAX_MODE 2
 
-MatlabHandler* model;
 FileMan manager;
 FileParser parser;
 
@@ -420,8 +417,6 @@ std::vector<bool> getModelOutput(std::vector<int> input, double time_val)
 	{
 	case NO_MODE:
 		break;
-	case MATL_MODE:
-		return model->getModelResults(input);
 	case FILE_MODE:
 		return getStoredData(modelOutput, time_val);
 	}
@@ -459,7 +454,7 @@ void getMode() {
 
 	while (!functionalMode)
 	{
-		std::cout << "What Mode Would You Like To Run (MATL_MODE = 1, FILE_MODE = 2, FPGA_MODE = 3):";
+		std::cout << "What Mode Would You Like To Run (FILE_MODE = 1, FPGA_MODE = 2): ";
 		std::cin >> input;
 		modeObtained = std::stoi(input);
 
@@ -501,19 +496,6 @@ void fileSetup()
 	}
 }
 
-void matlabSetup()
-{
-	model = new MatlabHandler();
-
-	seed = rand();
-	srand(seed);
-
-	std::string seed_str = std::to_string(seed);
-	std::vector<std::string> line;
-	line.push_back(seed_str);
-	modelOutput.push_back(line);
-}
-
 void fileSave()
 {
 	if (functionalMode == NO_MODE || functionalMode == FILE_MODE)
@@ -540,9 +522,6 @@ void modeSetup()
 	switch (functionalMode)
 	{
 	case NO_MODE:
-		return;
-	case MATL_MODE:
-		matlabSetup();
 		return;
 	case FILE_MODE:
 		fileSetup();
