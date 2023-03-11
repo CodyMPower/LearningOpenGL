@@ -55,6 +55,7 @@ Camera camera;
 Texture brickTexture;
 Texture dirtTexture;
 Texture faceTexture;
+Texture cheeseTexture;
 
 Material shinyMaterial;
 Material dullMaterial;
@@ -148,8 +149,54 @@ void calcAverageNormals(unsigned int* indices, unsigned int indCount, GLfloat *v
 	}
 }
 
+void loadOBJ(const std::string &file, std::vector<glm::vec3>& geometry, std::vector<glm::vec2>& texture, std::vector<glm::vec3>& normal)
+{
+	std::filesystem::path path = std::filesystem::current_path();
+	path /= "OBJ_Files";
+
+	manager.setFilePath(path.string());
+	manager.setFileName(file);
+	manager.setMode(std::fstream::in | std::fstream::out);
+
+	std::vector<std::string> fileData = manager.readFile();
+	
+	std::vector<std::vector<double>> geometry_temp;
+	std::vector<std::vector<double>> texture_temp;
+	std::vector<std::vector<double>> normal_temp;
+
+	parser.parseOBJ(fileData, geometry_temp, texture_temp, normal_temp);
+
+	glm::vec3 temp_vec3;
+	glm::vec2 temp_vec2;
+
+	for (std::vector<double> data : geometry_temp)
+	{
+		temp_vec3.x = data.at(0);
+		temp_vec3.y = data.at(1);
+		temp_vec3.z = data.at(2);
+		geometry.push_back(temp_vec3);
+	}
+
+	for (std::vector<double> data : normal_temp)
+	{
+		temp_vec3.x = -data.at(0);
+		temp_vec3.y = -data.at(1);
+		temp_vec3.z = -data.at(2);
+		normal.push_back(temp_vec3);
+	}
+
+	for (std::vector<double> data : texture_temp)
+	{
+		temp_vec2.x = data.at(0);
+		temp_vec2.y = data.at(1);
+		texture.push_back(temp_vec2);
+	}
+}
+
 void CreateObjects()
 {
+
+
 	unsigned int indices[] = {
 		0, 3, 1,
 		1, 3, 2,
@@ -174,6 +221,17 @@ void CreateObjects()
 	Mesh* obj2 = new Mesh();
 	obj2->CreateMesh(vertices, indices, 32, 12);
 	meshList.push_back(obj2);
+
+	std::vector<glm::vec3> geometry;
+	std::vector<glm::vec2> texture;
+	std::vector<glm::vec3> normal;
+	std::string file = "cheese.obj";
+
+	loadOBJ(file, geometry, texture, normal);
+
+	Mesh* obj3 = new Mesh();
+	obj3->CreateMesh(geometry, texture, normal);
+	meshList.push_back(obj3);
 }
 
 void CreateScene() {
@@ -187,7 +245,7 @@ void CreateScene() {
 	//	0.0f, glm::vec3(1.0f, 1.0f, 1.0f));
 	//objectVector.push_back(bottomTriangle);
 
-	RenderedObject* groundPlane = new RenderedObject(meshList[2], &dirtTexture, &shinyMaterial);
+	RenderedObject* groundPlane = new RenderedObject(meshList[3], &dirtTexture, &shinyMaterial);
 	groundPlane->setTransformMatrix(glm::vec3(0.0f, -2.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f),
 		0.0f, glm::vec3(1.0707, 1.0, 1.0707));
 	objectVector.push_back(groundPlane);
@@ -199,7 +257,7 @@ void CreateScene() {
 		playerTriangle);
 	objectVector.push_back(playerTriangle);
 
-	Food* triangle = new Food(meshList[0], &dirtTexture, &dullMaterial);
+	Food* triangle = new Food(meshList[2], &cheeseTexture, &shinyMaterial);
 	triangle->setTransformMatrix(glm::vec3(0.0f, -1.0f, -2.0f), glm::vec3(0.0f, 1.0f, 0.0f),
 		0.0f, glm::vec3(1.0f, 1.0f, 1.0f));
 	triangle->setSize(1.0f);
@@ -560,6 +618,8 @@ int main() {
 	dirtTexture.LoadTextureA();
 	faceTexture = Texture((char*)"Textures/Face.jpg");
 	faceTexture.LoadTextureA();
+	cheeseTexture = Texture((char*)"Textures/cheese.jpg");
+	cheeseTexture.LoadTextureA();
 
 	shinyMaterial = Material(4.0f, 256);	// Full intensity, higher powers of 2 indicate more shininess
 	dullMaterial = Material(0.3f, 4);	// Low intensity, lower powers of 2 indicates less shininess
