@@ -56,6 +56,7 @@ Texture brickTexture;
 Texture dirtTexture;
 Texture faceTexture;
 Texture cheeseTexture;
+Texture mouseTexture;
 
 Material shinyMaterial;
 Material dullMaterial;
@@ -188,7 +189,7 @@ void loadOBJ(const std::string &file, std::vector<glm::vec3>& geometry, std::vec
 	for (std::vector<double> data : texture_temp)
 	{
 		temp_vec2.x = data.at(0);
-		temp_vec2.y = data.at(1);
+		temp_vec2.y = 1-data.at(1);
 		texture.push_back(temp_vec2);
 	}
 }
@@ -232,6 +233,17 @@ void CreateObjects()
 	Mesh* obj3 = new Mesh();
 	obj3->CreateMesh(geometry, texture, normal);
 	meshList.push_back(obj3);
+
+	geometry.clear();
+	texture.clear();
+	normal.clear();
+	file = "mouse.obj";
+
+	loadOBJ(file, geometry, texture, normal);
+
+	Mesh* obj4 = new Mesh();
+	obj4->CreateMesh(geometry, texture, normal);
+	meshList.push_back(obj4);
 }
 
 void CreateScene() {
@@ -245,12 +257,12 @@ void CreateScene() {
 	//	0.0f, glm::vec3(1.0f, 1.0f, 1.0f));
 	//objectVector.push_back(bottomTriangle);
 
-	RenderedObject* groundPlane = new RenderedObject(meshList[3], &dirtTexture, &shinyMaterial);
+	RenderedObject* groundPlane = new RenderedObject(meshList[4], &dirtTexture, &shinyMaterial);
 	groundPlane->setTransformMatrix(glm::vec3(0.0f, -2.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f),
 		0.0f, glm::vec3(1.0707, 1.0, 1.0707));
 	objectVector.push_back(groundPlane);
 
-	RenderedObject* playerTriangle = new RenderedObject(meshList[0], &brickTexture, &dullMaterial);
+	RenderedObject* playerTriangle = new RenderedObject(meshList[3], &mouseTexture, &dullMaterial);
 	playerTriangle->setTransformMatrix(glm::vec3(2.0f, -1.0f, -2.0f), glm::vec3(0.0f, 1.0f, 0.0f),
 		0.0f, glm::vec3(1.0f, 1.0f, 1.0f));
 	player = new PlayerObject(glm::vec3(5.0f, -1.0f, -5.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f),
@@ -620,6 +632,8 @@ int main() {
 	faceTexture.LoadTextureA();
 	cheeseTexture = Texture((char*)"Textures/cheese.jpg");
 	cheeseTexture.LoadTextureA();
+	mouseTexture = Texture((char*)"Textures/mouse.jpg");
+	mouseTexture.LoadTextureA();
 
 	shinyMaterial = Material(4.0f, 256);	// Full intensity, higher powers of 2 indicate more shininess
 	dullMaterial = Material(0.3f, 4);	// Low intensity, lower powers of 2 indicates less shininess
