@@ -736,12 +736,14 @@ int main() {
 		}
 
 		glfwPollEvents();	// Gets user input events
-		camera.keyControl(mainWindow.getKeys(), deltaTime);						// Updates camera location based on keyboard input
+		camera.keyControl(mainWindow.getKeys(), deltaTime, functionalMode == NO_MODE);						// Updates camera location based on keyboard input
 		camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());	// Updates camera rotations based on changes in cursor locations
-		//player->keyControl(mainWindow.getKeys());
 		
-		if (!output.empty())
+		if (!output.empty() && functionalMode != NO_MODE)
 			player->modelCondrol(output);
+		else if (functionalMode == NO_MODE)
+			player->keyControl(mainWindow.getKeys());
+
 		player->updatePlayer(0.03333);//15 steps / second sim time
 		checkForCollisions();
 		
