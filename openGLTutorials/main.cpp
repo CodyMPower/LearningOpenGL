@@ -1,4 +1,5 @@
 #define STB_IMAGE_IMPLEMENTATION
+#define _USE_MATH_DEFINES
 
 #include <stdio.h>
 #include <string.h>
@@ -57,6 +58,7 @@ Texture dirtTexture;
 Texture faceTexture;
 Texture cheeseTexture;
 Texture mouseTexture;
+Texture skyTexture;
 
 Material shinyMaterial;
 Material dullMaterial;
@@ -194,6 +196,12 @@ void loadOBJ(const std::string &file, std::vector<glm::vec3>& geometry, std::vec
 	}
 }
 
+void setSkyboxNormal(std::vector<glm::vec3> &normals, glm::vec3 &dir_light_vec)
+{
+	for (int i = 0; i < normals.size(); i++)
+		normals.at(i) = dir_light_vec;
+}
+
 void CreateObjects()
 {
 
@@ -244,6 +252,21 @@ void CreateObjects()
 	Mesh* obj4 = new Mesh();
 	obj4->CreateMesh(geometry, texture, normal);
 	meshList.push_back(obj4);
+
+	//0.0, -1.0f, -1.0f
+	geometry.clear();
+	texture.clear();
+	normal.clear();
+	file = "sphere.obj";
+
+	glm::vec3 dir_light = glm::vec3(0.0, -1.0, -1.0);
+
+	loadOBJ(file, geometry, texture, normal);
+	setSkyboxNormal(normal, dir_light);
+
+	Mesh* obj5 = new Mesh();
+	obj5->CreateMesh(geometry, texture, normal);
+	meshList.push_back(obj5);
 }
 
 void CreateScene() {
@@ -257,7 +280,7 @@ void CreateScene() {
 	//	0.0f, glm::vec3(1.0f, 1.0f, 1.0f));
 	//objectVector.push_back(bottomTriangle);
 
-	RenderedObject* groundPlane = new RenderedObject(meshList[4], &dirtTexture, &shinyMaterial);
+	RenderedObject* groundPlane = new RenderedObject(meshList[5], &dirtTexture, &shinyMaterial);
 	groundPlane->setTransformMatrix(glm::vec3(0.0f, -2.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f),
 		0.0f, glm::vec3(1.0707, 1.0, 1.0707));
 	objectVector.push_back(groundPlane);
@@ -276,6 +299,11 @@ void CreateScene() {
 
 	foodVector.push_back(triangle);
 	objectVector.push_back(triangle);
+
+	RenderedObject* skybox = new RenderedObject(meshList[4], &skyTexture, &shinyMaterial);
+	skybox->setTransformMatrix(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 1.0f, 0.0f),
+		0.0f, glm::vec3(100.0f, 100.0f, 100.0f));
+	objectVector.push_back(skybox);
 }
 
 void CreateShader() {
@@ -634,6 +662,8 @@ int main() {
 	cheeseTexture.LoadTextureA();
 	mouseTexture = Texture((char*)"Textures/mouse.jpg");
 	mouseTexture.LoadTextureA();
+	skyTexture = Texture((char*)"Textures/sky.jpg");
+	skyTexture.LoadTextureA();
 
 	shinyMaterial = Material(4.0f, 256);	// Full intensity, higher powers of 2 indicate more shininess
 	dullMaterial = Material(0.3f, 4);	// Low intensity, lower powers of 2 indicates less shininess
@@ -643,7 +673,7 @@ int main() {
 		// rgb values
 		1.0f, 1.0f, 1.0f,
 		//amb, dif
-		0.5f, 0.3f,
+		0.7f, 0.3f,
 		//x, y	  , z
 		0.0, -1.0f, -1.0f);
 
@@ -661,24 +691,28 @@ int main() {
 
 
 
-	spotLights[0] = SpotLight(1.0f, 1.0f, 1.0f,
-		0.0f, 2.0f,
-		0.0f, 0.0f, 0.0f,
-		-100.0f, -1.0f, 0.0f,
-		0.3f, 0.2f, 0.1f,
-		20.0f);
-	spotLightCount++;
+	if (functionalMode != NO_MODE) {
+		spotLights[0] = SpotLight(1.0f, 1.0f, 1.0f,
+			0.0f, 2.0f,
+			0.0f, 0.0f, 0.0f,
+			-100.0f, -1.0f, 0.0f,
+			0.3f, 0.2f, 0.1f,
+			20.0f);
+		spotLightCount++;
+	}
 
 	// Creates a projection (perspective) matrix
 	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)mainWindow.getBufferWidth() / mainWindow.getBufferHeight(), 0.1f, 100.0f); // Only really need to create it once, unless you're manipulating the projection every frame
 
 	CreateScene();	// Sets the scene up to render
 
+	glm::vec3 playerPos;
 	glm::vec2 v1 = glm::normalize(glm::vec2(1.0f, 0.0f));
 	glm::vec2 v2 = glm::vec2(-v1.y, v1.x);
 	glm::vec2 p1 = glm::vec2(0.0f, 0.0f);
 	glm::vec2 p2 = glm::vec2(5.0f, 0.0f);
 	double radius = 1.0f;
+	double originalHeight = objectVector.at(2)->getPos().y;
 
 	const int max_vision = 23;
 	glm::vec2 food_arr[1];
@@ -736,16 +770,37 @@ int main() {
 		}
 
 		glfwPollEvents();	// Gets user input events
+		
 		camera.keyControl(mainWindow.getKeys(), deltaTime, functionalMode == NO_MODE);						// Updates camera location based on keyboard input
 		camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());	// Updates camera rotations based on changes in cursor locations
-		
+
 		if (!output.empty() && functionalMode != NO_MODE)
 			player->modelCondrol(output);
 		else if (functionalMode == NO_MODE)
+		{
 			player->keyControl(mainWindow.getKeys());
-
+		}
+			
 		player->updatePlayer(0.03333);//15 steps / second sim time
 		checkForCollisions();
+
+		if (functionalMode == NO_MODE)
+		{
+			playerPos = player->getPos();
+			playerPos.y += 1.4;
+			playerPos += (camera.getCameraDirection() * 2.0f);
+
+			player->setRotAng((camera.getCameraYaw() - 270) * (-M_PI / 180));
+			camera.setCameraPosition(playerPos);
+		}
+
+		objectVector.at(3)->setPosVec(camera.getCameraPosition());
+		objectVector.at(3)->setRotAng(objectVector.at(3)->getRotAng() + deltaTime * 0.01);
+
+		glm::vec3 offsetPos = objectVector.at(2)->getPos();
+		offsetPos.y = originalHeight + sin(now) * 0.2;
+		objectVector.at(2)->setPosVec(offsetPos);
+		objectVector.at(2)->setRotAng(objectVector.at(2)->getRotAng() + deltaTime * 0.3);
 		
 		DirectionalShadowMapPass(&mainLight);
 		renderPass(projection, camera.calculateViewMatrix());

@@ -16,6 +16,9 @@ public:
 
 	glm::vec3 getCameraPosition() { return position; }
 	glm::vec3 getCameraDirection() { return glm::normalize(front); }
+	GLfloat getCameraYaw() { return this->yaw; }
+
+	void setCameraPosition(glm::vec3 posVec) { this->position = posVec; }
 
 	glm::mat4 calculateViewMatrix();
 

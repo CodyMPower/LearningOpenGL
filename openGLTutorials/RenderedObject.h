@@ -27,7 +27,10 @@ public:
 
 	void setTransformMatrix(glm::mat4 transformMatrix) { this->transformMatrix = transformMatrix; }
 	void setTransformMatrix(glm::vec3 posVec, glm::vec3 rotVec, float rotationAngle, glm::vec3 sizeVec);
-	void setPosVec(glm::vec3 posVec);
+	void setPosVec(glm::vec3 posVec) { this->posVec = posVec; }
+	void setRotVec(glm::vec3 rotVec) { this->rotVec = rotVec; }
+	void setSizeVec(glm::vec3 sizeVec) { this->sizeVec = sizeVec; }
+	void setRotAng(double rotAng) { this->rotationAngle = rotAng; }
 
 	void calculateTransformMatrix();
 	void renderObject(GLuint uniformModel, GLuint uniformSpecularIntensity, GLuint uniformShininess);
