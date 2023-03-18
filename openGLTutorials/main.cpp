@@ -295,13 +295,13 @@ void CreateScene() {
 		playerTriangle);
 	objectVector.push_back(playerTriangle);
 
-	Food* triangle = new Food(meshList[2], &cheeseTexture, &shinyMaterial);
-	triangle->setTransformMatrix(glm::vec3(0.0f, -1.0f, -2.0f), glm::vec3(0.0f, 1.0f, 0.0f),
+	Food* food = new Food(meshList[2], &cheeseTexture, &shinyMaterial);
+	food->setTransformMatrix(glm::vec3(0.0f, -1.0f, -2.0f), glm::vec3(0.0f, 1.0f, 0.0f),
 		0.0f, glm::vec3(1.0f, 1.0f, 1.0f));
-	triangle->setSize(1.0f);
+	food->setSize(1.0f);
 
-	foodVector.push_back(triangle);
-	objectVector.push_back(triangle);
+	foodVector.push_back(food);
+	objectVector.push_back(food);
 
 	RenderedObject* skybox = new RenderedObject(meshList[4], &skyTexture, &shinyMaterial);
 	skybox->setTransformMatrix(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 1.0f, 0.0f),
@@ -472,6 +472,7 @@ int checkForCollisions()
 	for (Food* currFood : foodVector)
 	{
 		foodPos = currFood->getPos();
+		foodPos.y = -1;
 		distance = foodPos - playerPos;
 
 		if (glm::length(distance) <= currFood->getSize() + PLAYER_SIZE)
