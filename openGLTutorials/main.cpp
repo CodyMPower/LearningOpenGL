@@ -469,6 +469,7 @@ int checkForCollisions()
 	for (Food* currFood : foodVector)
 	{
 		foodPos = currFood->getPos();
+		foodPos.y = -1;
 		distance = foodPos - playerPos;
 
 		if (glm::length(distance) <= currFood->getSize() + PLAYER_SIZE)
