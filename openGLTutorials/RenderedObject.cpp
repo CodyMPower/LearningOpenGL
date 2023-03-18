@@ -20,11 +20,6 @@ void RenderedObject::setTransformMatrix(glm::vec3 posVec, glm::vec3 rotVec, floa
 	this->rotationAngle = rotationAngle;
 }
 
-void RenderedObject::setPosVec(glm::vec3 posVec)
-{
-	this->posVec = posVec;
-}
-
 void RenderedObject::calculateTransformMatrix() {
 	transformMatrix = glm::mat4(1.0f);
 	transformMatrix = glm::translate(transformMatrix, this->posVec);

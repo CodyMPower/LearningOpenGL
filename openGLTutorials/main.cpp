@@ -1,4 +1,5 @@
 #define STB_IMAGE_IMPLEMENTATION
+#define _USE_MATH_DEFINES
 
 #include <stdio.h>
 #include <string.h>
@@ -27,10 +28,10 @@
 #include "Material.h"
 #include "RenderedObject.h"
 #include "PlayerObject.h"
-#include "MatlabHandler.h"
 #include "Food.h"
 #include "FileMan.h"
 #include "FileParser.h"
+#include "MatlabHandler.h"
 
 #define PLAYER_SIZE 1
 #define BOARD_SIZE 40
@@ -58,6 +59,9 @@ Camera camera;
 Texture brickTexture;
 Texture dirtTexture;
 Texture faceTexture;
+Texture cheeseTexture;
+Texture mouseTexture;
+Texture skyTexture;
 
 Material shinyMaterial;
 Material dullMaterial;
@@ -151,8 +155,60 @@ void calcAverageNormals(unsigned int* indices, unsigned int indCount, GLfloat *v
 	}
 }
 
+void loadOBJ(const std::string &file, std::vector<glm::vec3>& geometry, std::vector<glm::vec2>& texture, std::vector<glm::vec3>& normal)
+{
+	std::filesystem::path path = std::filesystem::current_path();
+	path /= "OBJ_Files";
+
+	manager.setFilePath(path.string());
+	manager.setFileName(file);
+	manager.setMode(std::fstream::in | std::fstream::out);
+
+	std::vector<std::string> fileData = manager.readFile();
+	
+	std::vector<std::vector<double>> geometry_temp;
+	std::vector<std::vector<double>> texture_temp;
+	std::vector<std::vector<double>> normal_temp;
+
+	parser.parseOBJ(fileData, geometry_temp, texture_temp, normal_temp);
+
+	glm::vec3 temp_vec3;
+	glm::vec2 temp_vec2;
+
+	for (std::vector<double> data : geometry_temp)
+	{
+		temp_vec3.x = data.at(0);
+		temp_vec3.y = data.at(1);
+		temp_vec3.z = data.at(2);
+		geometry.push_back(temp_vec3);
+	}
+
+	for (std::vector<double> data : normal_temp)
+	{
+		temp_vec3.x = -data.at(0);
+		temp_vec3.y = -data.at(1);
+		temp_vec3.z = -data.at(2);
+		normal.push_back(temp_vec3);
+	}
+
+	for (std::vector<double> data : texture_temp)
+	{
+		temp_vec2.x = data.at(0);
+		temp_vec2.y = 1-data.at(1);
+		texture.push_back(temp_vec2);
+	}
+}
+
+void setSkyboxNormal(std::vector<glm::vec3> &normals, glm::vec3 &dir_light_vec)
+{
+	for (int i = 0; i < normals.size(); i++)
+		normals.at(i) = dir_light_vec;
+}
+
 void CreateObjects()
 {
+
+
 	unsigned int indices[] = {
 		0, 3, 1,
 		1, 3, 2,
@@ -177,6 +233,43 @@ void CreateObjects()
 	Mesh* obj2 = new Mesh();
 	obj2->CreateMesh(vertices, indices, 32, 12);
 	meshList.push_back(obj2);
+
+	std::vector<glm::vec3> geometry;
+	std::vector<glm::vec2> texture;
+	std::vector<glm::vec3> normal;
+	std::string file = "cheese.obj";
+
+	loadOBJ(file, geometry, texture, normal);
+
+	Mesh* obj3 = new Mesh();
+	obj3->CreateMesh(geometry, texture, normal);
+	meshList.push_back(obj3);
+
+	geometry.clear();
+	texture.clear();
+	normal.clear();
+	file = "mouse.obj";
+
+	loadOBJ(file, geometry, texture, normal);
+
+	Mesh* obj4 = new Mesh();
+	obj4->CreateMesh(geometry, texture, normal);
+	meshList.push_back(obj4);
+
+	//0.0, -1.0f, -1.0f
+	geometry.clear();
+	texture.clear();
+	normal.clear();
+	file = "sphere.obj";
+
+	glm::vec3 dir_light = glm::vec3(0.0, -1.0, -1.0);
+
+	loadOBJ(file, geometry, texture, normal);
+	setSkyboxNormal(normal, dir_light);
+
+	Mesh* obj5 = new Mesh();
+	obj5->CreateMesh(geometry, texture, normal);
+	meshList.push_back(obj5);
 }
 
 void CreateScene() {
@@ -190,25 +283,30 @@ void CreateScene() {
 	//	0.0f, glm::vec3(1.0f, 1.0f, 1.0f));
 	//objectVector.push_back(bottomTriangle);
 
-	RenderedObject* groundPlane = new RenderedObject(meshList[2], &dirtTexture, &shinyMaterial);
+	RenderedObject* groundPlane = new RenderedObject(meshList[5], &dirtTexture, &shinyMaterial);
 	groundPlane->setTransformMatrix(glm::vec3(0.0f, -2.0f, 0.0f), glm::vec3(0.0f, 1.0f, 0.0f),
 		0.0f, glm::vec3(1.0707, 1.0, 1.0707));
 	objectVector.push_back(groundPlane);
 
-	RenderedObject* playerTriangle = new RenderedObject(meshList[0], &brickTexture, &dullMaterial);
+	RenderedObject* playerTriangle = new RenderedObject(meshList[3], &mouseTexture, &dullMaterial);
 	playerTriangle->setTransformMatrix(glm::vec3(2.0f, -1.0f, -2.0f), glm::vec3(0.0f, 1.0f, 0.0f),
 		0.0f, glm::vec3(1.0f, 1.0f, 1.0f));
 	player = new PlayerObject(glm::vec3(5.0f, -1.0f, -5.0f), glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(1.0f, 1.0f, 1.0f),
 		playerTriangle);
 	objectVector.push_back(playerTriangle);
 
-	Food* triangle = new Food(meshList[0], &dirtTexture, &dullMaterial);
+	Food* triangle = new Food(meshList[2], &cheeseTexture, &shinyMaterial);
 	triangle->setTransformMatrix(glm::vec3(0.0f, -1.0f, -2.0f), glm::vec3(0.0f, 1.0f, 0.0f),
 		0.0f, glm::vec3(1.0f, 1.0f, 1.0f));
 	triangle->setSize(1.0f);
 
 	foodVector.push_back(triangle);
 	objectVector.push_back(triangle);
+
+	RenderedObject* skybox = new RenderedObject(meshList[4], &skyTexture, &shinyMaterial);
+	skybox->setTransformMatrix(glm::vec3(2.0f, 2.0f, 2.0f), glm::vec3(0.0f, 1.0f, 0.0f),
+		0.0f, glm::vec3(100.0f, 100.0f, 100.0f));
+	objectVector.push_back(skybox);
 }
 
 void CreateShader() {
@@ -424,6 +522,8 @@ std::vector<bool> getModelOutput(std::vector<int> input, double time_val)
 		return model->getModelResults(input);
 	case FILE_MODE:
 		return getStoredData(modelOutput, time_val);
+	default:
+		return std::vector<bool>();
 	}
 
 	return std::vector<bool>();
@@ -501,19 +601,6 @@ void fileSetup()
 	}
 }
 
-void matlabSetup()
-{
-	model = new MatlabHandler();
-
-	seed = rand();
-	srand(seed);
-
-	std::string seed_str = std::to_string(seed);
-	std::vector<std::string> line;
-	line.push_back(seed_str);
-	modelOutput.push_back(line);
-}
-
 void fileSave()
 {
 	if (functionalMode == NO_MODE || functionalMode == FILE_MODE)
@@ -535,6 +622,19 @@ void fileSave()
 	manager.writeFile(fileData);
 }
 
+void matlabSetup()
+{
+	model = new MatlabHandler();
+
+	seed = rand();
+	srand(seed);
+
+	std::string seed_str = std::to_string(seed);
+	std::vector<std::string> line;
+	line.push_back(seed_str);
+	modelOutput.push_back(line);
+}
+
 void modeSetup()
 {
 	switch (functionalMode)
@@ -546,6 +646,8 @@ void modeSetup()
 		return;
 	case FILE_MODE:
 		fileSetup();
+		return;
+	default:
 		return;
 	}
 }
@@ -581,6 +683,12 @@ int main() {
 	dirtTexture.LoadTextureA();
 	faceTexture = Texture((char*)"Textures/Face.jpg");
 	faceTexture.LoadTextureA();
+	cheeseTexture = Texture((char*)"Textures/cheese.jpg");
+	cheeseTexture.LoadTextureA();
+	mouseTexture = Texture((char*)"Textures/mouse.jpg");
+	mouseTexture.LoadTextureA();
+	skyTexture = Texture((char*)"Textures/sky.jpg");
+	skyTexture.LoadTextureA();
 
 	shinyMaterial = Material(4.0f, 256);	// Full intensity, higher powers of 2 indicate more shininess
 	dullMaterial = Material(0.3f, 4);	// Low intensity, lower powers of 2 indicates less shininess
@@ -590,7 +698,7 @@ int main() {
 		// rgb values
 		1.0f, 1.0f, 1.0f,
 		//amb, dif
-		0.5f, 0.3f,
+		0.7f, 0.3f,
 		//x, y	  , z
 		0.0, -1.0f, -1.0f);
 
@@ -608,24 +716,28 @@ int main() {
 
 
 
-	spotLights[0] = SpotLight(1.0f, 1.0f, 1.0f,
-		0.0f, 2.0f,
-		0.0f, 0.0f, 0.0f,
-		-100.0f, -1.0f, 0.0f,
-		0.3f, 0.2f, 0.1f,
-		20.0f);
-	spotLightCount++;
+	if (functionalMode != NO_MODE) {
+		spotLights[0] = SpotLight(1.0f, 1.0f, 1.0f,
+			0.0f, 2.0f,
+			0.0f, 0.0f, 0.0f,
+			-100.0f, -1.0f, 0.0f,
+			0.3f, 0.2f, 0.1f,
+			20.0f);
+		spotLightCount++;
+	}
 
 	// Creates a projection (perspective) matrix
 	glm::mat4 projection = glm::perspective(45.0f, (GLfloat)mainWindow.getBufferWidth() / mainWindow.getBufferHeight(), 0.1f, 100.0f); // Only really need to create it once, unless you're manipulating the projection every frame
 
 	CreateScene();	// Sets the scene up to render
 
+	glm::vec3 playerPos;
 	glm::vec2 v1 = glm::normalize(glm::vec2(1.0f, 0.0f));
 	glm::vec2 v2 = glm::vec2(-v1.y, v1.x);
 	glm::vec2 p1 = glm::vec2(0.0f, 0.0f);
 	glm::vec2 p2 = glm::vec2(5.0f, 0.0f);
 	double radius = 1.0f;
+	double originalHeight = objectVector.at(2)->getPos().y;
 
 	const int max_vision = 23;
 	glm::vec2 food_arr[1];
@@ -683,14 +795,37 @@ int main() {
 		}
 
 		glfwPollEvents();	// Gets user input events
-		camera.keyControl(mainWindow.getKeys(), deltaTime);						// Updates camera location based on keyboard input
-		camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());	// Updates camera rotations based on changes in cursor locations
-		//player->keyControl(mainWindow.getKeys());
 		
-		if (!output.empty())
+		camera.keyControl(mainWindow.getKeys(), deltaTime, functionalMode == NO_MODE);						// Updates camera location based on keyboard input
+		camera.mouseControl(mainWindow.getXChange(), mainWindow.getYChange());	// Updates camera rotations based on changes in cursor locations
+
+		if (!output.empty() && functionalMode != NO_MODE)
 			player->modelCondrol(output);
+		else if (functionalMode == NO_MODE)
+		{
+			player->keyControl(mainWindow.getKeys());
+		}
+			
 		player->updatePlayer(0.03333);//15 steps / second sim time
 		checkForCollisions();
+
+		if (functionalMode == NO_MODE)
+		{
+			playerPos = player->getPos();
+			playerPos.y += 1.4;
+			playerPos += (camera.getCameraDirection() * 2.0f);
+
+			player->setRotAng((camera.getCameraYaw() - 270) * (-M_PI / 180));
+			camera.setCameraPosition(playerPos);
+		}
+
+		objectVector.at(3)->setPosVec(camera.getCameraPosition());
+		objectVector.at(3)->setRotAng(objectVector.at(3)->getRotAng() + deltaTime * 0.01);
+
+		glm::vec3 offsetPos = objectVector.at(2)->getPos();
+		offsetPos.y = originalHeight + sin(now) * 0.2;
+		objectVector.at(2)->setPosVec(offsetPos);
+		objectVector.at(2)->setRotAng(objectVector.at(2)->getRotAng() + deltaTime * 0.3);
 		
 		DirectionalShadowMapPass(&mainLight);
 		renderPass(projection, camera.calculateViewMatrix());
