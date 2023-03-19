@@ -813,7 +813,7 @@ int main() {
 		if (functionalMode == NO_MODE)
 		{
 			playerPos = player->getPos();
-			playerPos.y += 1.4;
+			playerPos.y += 2;
 			playerPos += (camera.getCameraDirection() * 2.0f);
 
 			player->setRotAng((camera.getCameraYaw() - 270) * (-M_PI / 180));
