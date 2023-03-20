@@ -566,8 +566,6 @@ std::vector<bool> getModelOutput(std::vector<int> input, double time_val)
 	default:
 		return std::vector<bool>();
 	}
-
-	return std::vector<bool>();
 }
 
 std::vector<std::string> outputToString(std::vector<bool> modelOutput) {
