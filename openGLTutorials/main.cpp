@@ -31,6 +31,7 @@
 #include "Food.h"
 #include "FileMan.h"
 #include "FileParser.h"
+#include "Piping.h"
 
 #define PLAYER_SIZE 1
 #define BOARD_SIZE 40
@@ -40,6 +41,7 @@
 #define FPGA_MODE 2
 #define MAX_MODE 2
 
+Piping* fpgaPipe;
 FileMan manager;
 FileParser parser;
 
@@ -509,6 +511,47 @@ std::vector<bool> getStoredData(std::vector<std::vector<std::string>> recording,
 	return output;
 }
 
+#define FPGA_LOAD_INPUT_FORMAT "LD_INPUT,%d,%d\0"
+#define FPGA_EXECUTE_FORMAT "RUN_EXECUTION"
+
+bool RWStatus = false;
+
+std::vector<bool> getFPGAData(std::vector<int> input)
+{
+	char text[1024] = "";
+	std::string data;
+	std::vector<bool> output;
+
+	if (!RWStatus) {
+		for (int i = 0; i < input.size(); i++)
+		{
+			sprintf_s(text, FPGA_LOAD_INPUT_FORMAT, i, input.at(i));
+			data = text;
+			fpgaPipe->writeToPipe(data);
+		}
+		sprintf_s(text, FPGA_EXECUTE_FORMAT);
+		data = text;
+		fpgaPipe->writeToPipe(data);
+		RWStatus = !RWStatus;
+	}
+	else {
+		data = fpgaPipe->readFromPipe();
+		if (!data.empty())
+		{
+			for (int i = 0; i < 3; i++)
+				output.push_back(false);
+
+			output.at(0) = (data == "LEFT");
+			output.at(1) = (data == "CENTER");
+			output.at(1) = (data == "RIGHT");
+
+			if (data == "ERROR")
+				output.push_back(true);
+		}
+	}
+
+	return output;
+}
 
 std::vector<bool> getModelOutput(std::vector<int> input, double time_val)
 {
@@ -518,6 +561,9 @@ std::vector<bool> getModelOutput(std::vector<int> input, double time_val)
 		break;
 	case FILE_MODE:
 		return getStoredData(modelOutput, time_val);
+	case FPGA_MODE:
+		return getFPGAData(input);
+	default:
 	}
 
 	return std::vector<bool>();
@@ -624,6 +670,11 @@ void modeSetup()
 		return;
 	case FILE_MODE:
 		fileSetup();
+		return;
+	case FPGA_MODE:
+		fpgaPipe = new Piping();
+		return;
+	default:
 		return;
 	}
 }
@@ -817,6 +868,10 @@ int main() {
 	std::cout << modelOutput.size() << "\n";
 	mainWindow.~GLWindow();	// Destroys the window after use
 	fileSave();
+
+	if (fpgaPipe != nullptr)
+		fpgaPipe->~Piping();
+	fpgaPipe = nullptr;
 
 	return 0;
 

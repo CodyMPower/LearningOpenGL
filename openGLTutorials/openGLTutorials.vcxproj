@@ -29,6 +29,8 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
+    <ClCompile Include="Piper.cpp" />
+    <ClCompile Include="Piping.cpp" />
     <ClCompile Include="PlayerObject.cpp" />
     <ClCompile Include="PointLight.cpp" />
     <ClCompile Include="RenderedObject.cpp" />
@@ -57,6 +59,8 @@
     <ClInclude Include="Light.h" />
     <ClInclude Include="Material.h" />
     <ClInclude Include="Mesh.h" />
+    <ClInclude Include="Piper.h" />
+    <ClInclude Include="Piping.h" />
     <ClInclude Include="PlayerObject.h" />
     <ClInclude Include="PointLight.h" />
     <ClInclude Include="RenderedObject.h" />
