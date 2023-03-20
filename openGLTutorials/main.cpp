@@ -546,10 +546,11 @@ std::vector<bool> getFPGAData(std::vector<int> input)
 
 			output.at(0) = (data == "LEFT");
 			output.at(1) = (data == "CENTER");
-			output.at(1) = (data == "RIGHT");
+			output.at(2) = (data == "RIGHT");
 
 			if (data == "ERROR")
 				output.push_back(true);
+			RWStatus = !RWStatus;
 		}
 	}
 
@@ -560,19 +561,16 @@ std::vector<bool> getModelOutput(std::vector<int> input, double time_val)
 {
 	switch (functionalMode)
 	{
-	case NO_MODE:
-		break;
 	case MATL_MODE:
 		return model->getModelResults(input);
 	case FILE_MODE:
 		return getStoredData(modelOutput, time_val);
 	case FPGA_MODE:
 		return getFPGAData(input);
+	case NO_MODE:
 	default:
 		return std::vector<bool>();
 	}
-
-	return std::vector<bool>();
 }
 
 std::vector<std::string> outputToString(std::vector<bool> modelOutput) {
