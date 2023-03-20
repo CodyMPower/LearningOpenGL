@@ -11,7 +11,7 @@
 #include "Piper.h"
 
 #define MAX_TEXT_SIZE 4096
-#define SHUTDOWN "SHUTDOWN"
+#define SHUTDOWN "EXIT"
 
 class Piping
 {
