@@ -899,9 +899,11 @@ int main() {
 
 	if (model != nullptr)
 		model->~MatlabHandler();
+	model = nullptr;
 
 	if (fpgaPipe != nullptr)
 		fpgaPipe->~Piping();
+	fpgaPipe = nullptr;
 
 	return 0;
 
