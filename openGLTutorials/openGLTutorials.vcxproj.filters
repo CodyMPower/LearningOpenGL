@@ -95,6 +95,12 @@
     <ClCompile Include="MatlabHandler.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Piping.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Piper.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Mesh.h">
@@ -152,6 +158,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MatlabHandler.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Piping.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Piper.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
