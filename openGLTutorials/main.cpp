@@ -526,10 +526,11 @@ std::vector<bool> getFPGAData(std::vector<int> input)
 		for (int i = 0; i < input.size(); i++)
 		{
 			sprintf_s(text, FPGA_LOAD_INPUT_FORMAT, i, input.at(i));
-			data.append(text);
+			data = text;
+			fpgaPipe->writeToPipe(data);
 		}
 		sprintf_s(text, FPGA_EXECUTE_FORMAT);
-		data.append(text);
+		data = text;
 		fpgaPipe->writeToPipe(data);
 		RWStatus = !RWStatus;
 	}
