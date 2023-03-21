@@ -511,7 +511,7 @@ std::vector<bool> getStoredData(std::vector<std::vector<std::string>> recording,
 	return output;
 }
 
-#define FPGA_LOAD_INPUT_FORMAT "LD_INPUT,%d,%d\n"
+#define FPGA_LOAD_INPUT_FORMAT "LD_INPUT,%d,%d\0"
 #define FPGA_EXECUTE_FORMAT "RUN_EXECUTION\0"
 
 bool RWStatus = false;
