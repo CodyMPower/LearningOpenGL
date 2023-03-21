@@ -511,8 +511,8 @@ std::vector<bool> getStoredData(std::vector<std::vector<std::string>> recording,
 	return output;
 }
 
-#define FPGA_LOAD_INPUT_FORMAT "LD_INPUT,%d,%d\0"
-#define FPGA_EXECUTE_FORMAT "RUN_EXECUTION"
+#define FPGA_LOAD_INPUT_FORMAT "LD_INPUT,%d,%d\n"
+#define FPGA_EXECUTE_FORMAT "RUN_EXECUTION\0"
 
 bool RWStatus = false;
 
@@ -526,11 +526,10 @@ std::vector<bool> getFPGAData(std::vector<int> input)
 		for (int i = 0; i < input.size(); i++)
 		{
 			sprintf_s(text, FPGA_LOAD_INPUT_FORMAT, i, input.at(i));
-			data = text;
-			fpgaPipe->writeToPipe(data);
+			data.append(text);
 		}
 		sprintf_s(text, FPGA_EXECUTE_FORMAT);
-		data = text;
+		data.append(text);
 		fpgaPipe->writeToPipe(data);
 		RWStatus = !RWStatus;
 	}
