@@ -83,8 +83,8 @@ bool PlayerObject::_seesFood(glm::vec2 v1, glm::vec2 p2, double radius)
 	if (v1.x >= 0.01)	// Values approach infinity as a vector becomes vertical
 	{
 		// t2 calculation according to vector math:
-		num = ((v1.y * p2.x) / (v1.x * v2.y)) + (p1.y / v2.y) - ((v1.y * p1.x) / (v1.x * v2.y)) - (p2.y / v2.y);
-		denom = 1 - ((v1.y * v2.x) / (v1.x * v2.y));
+		num = (p2.x - p1.x) * v1.y + (p1.y - p2.y) * v1.x;
+		denom = v1.x * v2.y - v1.y * v2.x;
 		t2 = num / denom;
 
 		// t1 calculation according to vector math:
@@ -95,8 +95,8 @@ bool PlayerObject::_seesFood(glm::vec2 v1, glm::vec2 p2, double radius)
 	else
 	{
 		// t1 calculation according to vector math:
-		num = ((v2.y * p1.x) / (v2.x * v1.y)) + (p2.y / v1.y) - ((v2.y * p2.x) / (v2.x * v1.y)) - (p1.y / v1.y);
-		denom = 1 - ((v1.x * v2.y) / (v1.y * v2.x));
+		num = (p1.x - p2.x) * v2.y + (p2.y - p1.y) * v2.x;
+		denom = v1.y * v2.x - v1.x * v2.y;
 		t1 = num / denom;
 
 		// t1 calculation according to vector math:
